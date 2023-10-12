@@ -14,10 +14,31 @@ fn generate_random_string(length: usize) -> String {
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() != 2 || args[1] != "make" {
-        println!("Usage: psm make");
-    } else {
-        let random_string = generate_random_string(12);
-        println!("Generated random password: {}", random_string);
+    if args.len() < 2 {
+        println!("Usage: psm make|use)");
+        return;
+    }
+
+    let verb = args[1].trim();
+    match verb {
+        "make" => {
+            let mut length: usize = 10;
+            if args.len() > 2 {
+                    length = match args[2].trim().strip_prefix("-l=") {
+                    Some(val) => val.parse().unwrap_or(10),
+                    None => {
+                        println!("Invalid argument format. Usage: psm make -l=10");
+                        return;
+                    }
+                };
+            } 
+            let random_string = generate_random_string(length);
+            println!("Generated password: {}", random_string);
+        },
+        "use" => {
+            println!("use command will be implemented soon");
+        },
+        _ => {
+        }
     }
 }
