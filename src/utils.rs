@@ -1,5 +1,7 @@
 use rand::Rng;
 use rand::seq::SliceRandom;
+use std::fs;
+use std::io::Write;
 
 pub fn generate_random_string(length: usize, advance: bool) -> String {
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -29,5 +31,46 @@ pub fn generate_random_string(length: usize, advance: bool) -> String {
             })
             .collect();
         password
+    }
+}
+
+pub fn store_secret(name: &str, value: &str, secret_file: &str) {
+    let row = format!("{}: {}\n", name, value);
+
+    // 打开文件并以追加模式写入
+    let mut file = fs::OpenOptions::new()
+        .write(true)
+        .append(true)
+        .open(secret_file)
+        .expect("Unable to open file");
+
+    // 写入内容到文件
+    file.write_all(row.as_bytes())
+        .expect("Unable to write to file");
+
+    println!("Secret stored in {}", secret_file);
+}
+
+pub fn get_secret(name: &str, secret_file: &str) -> Option<String> {
+    if let Ok(file_content) = fs::read_to_string(secret_file) {
+        for line in file_content.lines() {
+            if line.starts_with(&format!("{}:", name)) {
+                // 找到匹配的行，解析出秘密值并返回
+                let secret = line.splitn(2, ':').nth(1);
+                if let Some(secret) = secret {
+                    return Some(secret.trim().to_string());
+                }
+            }
+        }
+    }
+    None // 如果未找到匹配的秘密，返回 None
+}
+
+pub fn get_secret_file_path() -> String {
+    if let Some(home_dir) = dirs::home_dir() {
+        let home_path = home_dir.to_str().expect("Invalid home directory").to_string();
+        format!("{}/.psm_secret", home_path)
+    } else {
+        panic!("Unable to determine home directory");
     }
 }

@@ -1,7 +1,7 @@
 use crate::constants::ERROR_MSG;
 use crate::utils;
 
-pub fn handle_make(args: &[String]) {
+pub fn handle_make(args: &[String], secret_file: &str) {
     let mut length = 10;
     let mut advance = false;
 
@@ -35,6 +35,7 @@ pub fn handle_make(args: &[String]) {
         }
     }
 
-    let random_string = utils::generate_random_string(length, advance);
+    let random_string = &utils::generate_random_string(length, advance);
     println!("Generated secret {}: {}", name, random_string);
+    utils::store_secret(name, random_string, secret_file);
 }
