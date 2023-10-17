@@ -1,7 +1,5 @@
-use utils::get_secret_file_path;
-
 mod constants;
-mod handler;
+mod cmds;
 mod utils;
 
 fn main() {
@@ -11,16 +9,12 @@ fn main() {
         return;
     }
 
-    let secret_file = &get_secret_file_path();
+    let secret_file = &utils::get_secret_file_path();
 
     let verb = args[1].trim();
     match verb {
-        "make" => handler::handle_make(&args[2..], secret_file),
-        "use" => {
-            let name = args[2].trim();
-            let res = utils::get_secret(name, secret_file).unwrap_or("Secret not found".to_string());
-            println!("{}", res);
-        },
+        "make" => cmds::cmd_make(&args[2..], secret_file),
+        "use" => cmds::cmd_use(args[2].trim(), secret_file),
         "add" => {
             let name = args[2].trim();
             let value = args[3].trim();

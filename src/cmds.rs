@@ -1,7 +1,9 @@
 use crate::constants::ERROR_MSG;
 use crate::utils;
+use clipboard::ClipboardProvider;
+use clipboard::ClipboardContext;
 
-pub fn handle_make(args: &[String], secret_file: &str) {
+pub fn cmd_make(args: &[String], secret_file: &str) {
     let mut length = 10;
     let mut advance = false;
 
@@ -35,7 +37,17 @@ pub fn handle_make(args: &[String], secret_file: &str) {
         }
     }
 
+    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
     let random_string = &utils::generate_random_string(length, advance);
-    println!("Generated secret {}: {}", name, random_string);
+    ctx.set_contents(random_string.to_owned()).expect("Failed to set clipboard content");
+    println!("Generated secret {}: ********, copied to clipboard", name);
+
     utils::store_secret(name, random_string, secret_file);
+}
+
+pub fn cmd_use(name: &str, secret_file: &str) {
+    let secret = utils::get_secret(name, secret_file).unwrap_or("Secret not found".to_string());
+    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+    ctx.set_contents(secret.to_owned()).expect("Failed to set clipboard content");
+    println!("Use secret {}: ********, copied to clipboard", name);
 }
