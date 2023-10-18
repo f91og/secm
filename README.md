@@ -1,4 +1,21 @@
-** 关于mod, use, crate, pub **
+My secret management tool via cli
+## Usage
+```shell
+# make secret
+scem make secretName
+scem make secretName -l=20
+scem make secretName -l=20 -a
+
+scem use secretName
+# enter into interactive mode to select a secret
+scem use
+
+scem add secretName secretValue
+scem rm secretName
+```
+
+## Memo
+**关于mod, use, crate, pub**
 pub 用于声明可以被文件外的地方使用
 mod 用于声明模块，用在main.rs或其他文件中lib.rs中，类似于一个注册功能
 crate 是mod的组织，从main.rs或者lib.rs开始，根据main和lib.rs中的mod注册，形成一个mod树
@@ -22,4 +39,3 @@ use crate::constants; // 这里需要是use，因为只能在main.rs和lib.rs中
 ...
 println!("max points: {}", constants::MAX_POINTS);
 ```
-        
