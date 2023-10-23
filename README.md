@@ -39,3 +39,38 @@ use crate::constants; // 这里需要是use，因为只能在main.rs和lib.rs中
 ...
 println!("max points: {}", constants::MAX_POINTS);
 ```
+
+**关于Result<>, Ok()和Value()**
+```rust
+fn divide(a: i32, b: i32) -> Result<i32, String> {
+    if b == 0 {
+        return Err("Division by zero is not allowed.".to_string());
+    }
+    Ok(a / b)
+}
+
+fn main() {
+    let result = divide(8, 2);
+    
+    match result {
+        Ok(value) => {
+            println!("Result: {}", value);
+        },
+        Err(error) => {
+            println!("Error: {}", error);
+        }
+    }
+}
+```
+
+**关于cargo**
+```shell
+# run project
+cargo run
+
+# install current project to ~/.cargo/bin
+cargo install --path .
+```
+
+**关于数据类型**
+vec!和 Vec<&str>的使用区别
