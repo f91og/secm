@@ -6,46 +6,32 @@ use crossterm::{
 use std::{io, time::Duration};
 use tui::{
     backend::{Backend, CrosstermBackend},
-    layout::{Constraint, Direction, Layout},
-    widgets::{Block, Borders, List, ListItem},
-    // text::{Span, Spans, Text},
     Terminal,
-    Frame,
 };
 
-// 结构体必须掌握字段值所有权，因为结构体失效的时候会释放所有字段
-// 不意味着结构体中不定义引用型字段，这需要通过"生命周期"机制来实现
-struct App {
-    items: Vec<String>, // 存放一些数据或者 UI 状态
-}
+use secm::app::App;
+use secm::ui;
 
 fn main() -> Result<(), io::Error> {
-    // 初始化终端
+    // 1.初始化终端
     enable_raw_mode()?;
     let mut stdout = io::stdout();
     execute!(stdout, EnterAlternateScreen, EnableMouseCapture)?;
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
+    // secret list got from file
+    let secrets = vec!["Item 1".to_string(), "Item 2".to_string(), "Item 3".to_string(),];
+
     let app = App {
-        items: vec![
-            "Item 1".to_string(), // &str -> String
-            "Item 2".to_string(),
-            "Item 3".to_string(),
-            "Item 4".to_string(),
-            "Item 5".to_string(),
-            "Item 6".to_string(),
-            "Item 7".to_string(),
-            "Item 8".to_string(),
-            "Item 9".to_string(),
-            "Item 10".to_string(),
-        ],
+        input: String::new(),
+        secrets: secrets,
     };
 
-    // 渲染界面
+    // 2.渲染界面
     run_app(&mut terminal, app)?;
 
-    // 恢复终端
+    // 3.恢复终端
     disable_raw_mode()?;
     execute!(
         terminal.backend_mut(),
@@ -62,15 +48,22 @@ fn main() -> Result<(), io::Error> {
 // 在你的示例中，当 `crossterm::event::poll(Duration::from_secs(1))?` 或 `event::read()?` 出现错误时，程序将尽早返回错误，以确保错误得到适当的处理。
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
     loop {
-        terminal.draw(|f| ui(f, &mut app))?;
+        terminal.draw(|f| ui::ui(f, &mut app))?;    // 把绘制界面逻辑放到ui模块中
         // 处理按键事件
         if crossterm::event::poll(Duration::from_secs(1))? {
             if let Event::Key(key) = event::read()? {
                 match key.code {
                     KeyCode::Char(ch) => {
-                        if 'q' == ch {
-                            break;
-                        }
+                        // if 'q' == ch {
+                        //     break;
+                        // }
+                        app.input.push(ch);
+                    }
+                    KeyCode::Backspace => {
+                        app.input.pop();
+                    },
+                    KeyCode::Esc => {
+                        break;
                     }
                     _ => {}
                 }
@@ -79,44 +72,4 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
         // 处理其他逻辑
     }
     Ok(())
-}
-
-fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
-    let size = f.size();
-    let chunks = Layout::default()
-        .direction(Direction::Vertical)
-        .margin(2)
-        .constraints([Constraint::Length(3), Constraint::Min(0)].as_ref())
-        .split(size);
-
-    // Render the filter input
-    let filter_block = Block::default().borders(Borders::ALL);
-    f.render_widget(filter_block, chunks[0]);
-
-    // Render the list of items
-    let items_block = Block::default().borders(Borders::ALL);
-
-    let items: Vec<ListItem> = app.items.iter().map(|item| ListItem::new(item.clone())).collect();
-    let items_list = List::new(items)
-            .block(items_block)
-            .highlight_style(tui::style::Style::default().fg(tui::style::Color::Yellow));
-    f.render_widget(items_list, chunks[1]);
-
-    // let chunks = Layout::default() // 首先获取默认构造
-    //     .constraints([Constraint::Length(3), Constraint::Min(3)].as_ref()) // 按照 3 行 和 最小 3 行的规则分割区域
-    //     .direction(Direction::Vertical) // 垂直分割
-    //     .split(f.size()); // 分割整块 Terminal 区域
-    // let paragraph = Paragraph::new(Span::styled(
-    //     app.url.as_str(),
-    //     Style::default().add_modifier(Modifier::BOLD),
-    // ))
-    // .block(Block::default().borders(Borders::ALL).title("HelloGitHub"))
-    // .alignment(tui::layout::Alignment::Left);
-    // f.render_widget(paragraph, chunks[0]);
-
-    // let paragraph = Paragraph::new("分享 GitHub 上有趣、入门级的开源项目")
-    //     .style(Style::default().bg(Color::White).fg(Color::Black))
-    //     .block(Block::default().borders(Borders::ALL).title("宗旨"))
-    //     .alignment(Alignment::Center);
-    // f.render_widget(paragraph, chunks[1]);
 }

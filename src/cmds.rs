@@ -9,7 +9,7 @@ pub fn cmd_make(args: &[String], secret_file: &str) {
 
     let name = args[0].trim();
     if name.starts_with("-") {
-        println!("{}", ERROR_MSG);
+        println!("{}", ERROR_MSG); // 此处应该返回error，或者panic，ERROR_MSG应该在上层中显示
         return;
     }
 
@@ -31,7 +31,7 @@ pub fn cmd_make(args: &[String], secret_file: &str) {
             },
             "a" | "advance" => advance = true,
             _ => {
-                println!("{}", ERROR_MSG);
+                println!("{}", ERROR_MSG);  // 此处应该返回error，或者panic，ERROR_MSG应该在上层中显示
                 return;
             }
         }
