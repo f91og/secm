@@ -9,6 +9,7 @@ edition = "2021"
 rand = "0.8"
 dirs = "5.0"
 clipboard = "0.5"
+unicode-width = "0.1"
 
 # https://cloud.tencent.com/developer/article/1973805
 tui = "0.17"

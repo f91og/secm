@@ -8,6 +8,7 @@ use tui::{
     style::{Color, Style},
     Frame,
 };
+use unicode_width::UnicodeWidthStr;
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let size = f.size();
@@ -22,7 +23,12 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
        .style(Style::default().fg(Color::Yellow))
        .block(Block::default().borders(Borders::ALL).title("Input"));
     f.render_widget(filter_input, chunks[0]);
-    f.set_cursor(chunks[0].x + 1, chunks[0].y + 1);
+    f.set_cursor(
+        // Put cursor past the end of the input text
+        chunks[0].x + app.input.width() as u16 + 1,
+        // Move one line down, from the border to the input line
+        chunks[0].y + 1,
+    );
 
     // let filter_block = Block::default().borders(Borders::ALL);
     // f.render_widget(filter_block, chunks[0]);

@@ -331,6 +331,7 @@ dependencies = [
  "dirs",
  "rand",
  "tui",
+ "unicode-width",
 ]
 
 [[package]]
