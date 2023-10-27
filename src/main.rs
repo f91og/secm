@@ -1,5 +1,5 @@
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event, KeyCode},
+    event::{self, DisableMouseCapture, EnableMouseCapture, Event},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
@@ -11,6 +11,7 @@ use tui::{
 
 use secm::app::App;
 use secm::ui;
+use secm::parse_keys;
 
 fn main() -> Result<(), io::Error> {
     // 1.初始化终端
@@ -26,10 +27,12 @@ fn main() -> Result<(), io::Error> {
     let app = App {
         input: String::new(),
         secrets: secrets,
+        selected_secret: 0
     };
 
     // 2.渲染界面
-    run_app(&mut terminal, app)?;
+    // let res = run_app(&mut terminal, app)?;
+    let res = run_app(&mut terminal, app);
 
     // 3.恢复终端
     disable_raw_mode()?;
@@ -39,6 +42,11 @@ fn main() -> Result<(), io::Error> {
         DisableMouseCapture
     )?;
     terminal.show_cursor()?;
+
+    if let Err(err) = res {
+        println!("{:?}", err)
+    }
+
     Ok(())
 }
 
@@ -52,24 +60,11 @@ fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<(
         // 处理按键事件
         if crossterm::event::poll(Duration::from_secs(1))? {
             if let Event::Key(key) = event::read()? {
-                match key.code {
-                    KeyCode::Char(ch) => {
-                        // if 'q' == ch {
-                        //     break;
-                        // }
-                        app.input.push(ch);
-                    }
-                    KeyCode::Backspace => {
-                        app.input.pop();
-                    },
-                    KeyCode::Esc => {
-                        break;
-                    }
-                    _ => {}
-                }
+                // 解析按键事件
+                if parse_keys::parse_keys(&mut app, key).is_some() { // is_some()判断是否有值，不为None
+                    return Ok(());
+                };
             }
         }
-        // 处理其他逻辑
     }
-    Ok(())
 }

@@ -1,7 +1,7 @@
-// use crate::app::App;
+use crate::app::App;
 // use crate::panel::PanelName;
-// // use std::io::{BufRead, BufReader};
-// // use crate::commands;
+// use std::io::{BufRead, BufReader};
+// use crate::commands;
 
 // pub fn pressed_enter(app: &mut App) {
 //     // TODO beautify (currently ugly)
@@ -20,3 +20,9 @@
 //         _ => {}
 //     };
 // }
+
+// 键盘按键对应的处理函数，比如回车键后复制内容到剪贴板
+pub fn pressed_enter(app: &mut App) {
+    let secret = &app.secrets[app.selected_secret];
+    // 复制到剪贴板
+}

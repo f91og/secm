@@ -4,6 +4,7 @@ pub struct App {
     /// Current value of the input box
     pub input: String,
     pub secrets: Vec<String>, // 存放一些数据或者 UI 状态
+    pub selected_secret: usize, // 选中的索引
 }
 
 // 为结构体添加方法
