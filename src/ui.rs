@@ -33,7 +33,32 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     // Render the list of items
     let items_block = Block::default().borders(Borders::ALL);
 
-    let items: Vec<ListItem> = app.secrets.iter().map(|item| ListItem::new(item.clone())).collect();
+    // if item index equal to selected index, highlight the item
+    let items: Vec<ListItem> = app.secrets.iter()
+        .enumerate()
+        .filter(|(_, item)| {
+            app.input.is_empty() || item.contains(app.input.as_str())
+        })
+        .map(|(i, item)| {
+            let style = if i == app.selected_secret_index {
+                Style::default().fg(Color::Yellow).bg(Color::LightCyan)
+            } else {
+                Style::default()
+            };
+            // filter item those that match the filter input
+            ListItem::new(item.clone()).style(style)
+        })
+        .collect();
+    app.len_after_filtered = items.len();
+    // let items: Vec<ListItem> = app.secrets.iter().enumerate().map(|(i, item)| {
+    //     let style = if i == app.selected_secret_index {
+    //         Style::default().fg(Color::Yellow).bg(Color::LightCyan)
+    //     } else {
+    //         Style::default()
+    //     };
+    //     // filter item those that match the filter input
+    //     ListItem::new(item.clone()).style(style)
+    // }).collect();
     let items_list = List::new(items)
             .block(items_block)
             .highlight_style(tui::style::Style::default().fg(tui::style::Color::Yellow));

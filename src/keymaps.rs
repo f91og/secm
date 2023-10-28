@@ -2,6 +2,7 @@ use crate::app::App;
 // use crate::panel::PanelName;
 // use std::io::{BufRead, BufReader};
 // use crate::commands;
+use clipboard::{ClipboardContext, ClipboardProvider};
 
 // pub fn pressed_enter(app: &mut App) {
 //     // TODO beautify (currently ugly)
@@ -23,6 +24,8 @@ use crate::app::App;
 
 // 键盘按键对应的处理函数，比如回车键后复制内容到剪贴板
 pub fn pressed_enter(app: &mut App) {
-    let secret = &app.secrets[app.selected_secret];
+    let secret = &app.secrets[app.selected_secret_index];
     // 复制到剪贴板
+    let mut clipboard = ClipboardContext::new().unwrap();
+    clipboard.set_contents(secret.clone()).unwrap();
 }

@@ -27,7 +27,8 @@ fn main() -> Result<(), io::Error> {
     let app = App {
         input: String::new(),
         secrets: secrets,
-        selected_secret: 0
+        len_after_filtered: 0,
+        selected_secret_index: 0
     };
 
     // 2.渲染界面
