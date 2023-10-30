@@ -6,12 +6,11 @@ scem make secretName
 scem make secretName -l=20
 scem make secretName -l=20 -a
 
-scem use secretName
 # enter into interactive mode to select a secret
-scem use
+scem
 
 scem add secretName secretValue
-scem rm secretName
+scem rm secretName 
 ```
 
 ## Memo
@@ -80,3 +79,7 @@ vec!和 Vec<&str>的使用区别
 从编译器的提示可以看到函数的传参是需要引用还是有所有权的
 一般来说只读的话则不需要所有权，否则需要所有权，因为所有权的设计其出发点就是避免对某个变量的同时写
 所以如果把对变量的修改放到所有权里，则不许需要各种变化，比如改变结构体成员的值，可以是实现在结构体的方法里，而不是在外部操作结构体来改变其中的成员
+一些所有权存在的规则：
+1. 一个作用域内对一个变量的不可变引用能存在多个，但是可变引用只能有一个，且可变引用不能和不可变引用在一个作用域里
+   1. 为了防止对一个变量的同时修改
+   2. 为了防止读变量时的不确定（变量修改前后读出的结果不一样）

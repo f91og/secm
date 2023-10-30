@@ -1,5 +1,4 @@
 pub mod cmds;
-pub mod constants;
 pub mod utils;
 pub mod app;
 pub mod ui;

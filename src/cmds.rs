@@ -1,16 +1,15 @@
-use crate::constants::ERROR_MSG;
 use crate::utils;
 use clipboard::ClipboardProvider;
 use clipboard::ClipboardContext;
 
-pub fn cmd_make(args: &[String], secret_file: &str) {
+pub fn cmd_make(args: &[String], secret_file: &str) -> Result<(), String> {
     let mut length = 10;
     let mut advance = false;
 
     let name = args[0].trim();
     if name.starts_with("-") {
-        println!("{}", ERROR_MSG); // 此处应该返回error，或者panic，ERROR_MSG应该在上层中显示
-        return;
+        // println!("{}", ERROR_MSG); // 此处应该返回error，或者panic，ERROR_MSG应该在上层中显示
+        return Err("Invalid name".to_string());
     }
 
     for i in 1..args.len() {
@@ -23,17 +22,13 @@ pub fn cmd_make(args: &[String], secret_file: &str) {
                 if let Ok(length_arg) = length_arg.parse::<usize>() {
                 // https://stackoverflow.com/questions/37936058/why-does-iterating-over-a-hashmapstr-str-yield-a-str
                 // let random_string = generate_random_string(length, *cmd_args.get("advance").unwrap_or(&"false") == "true");
-                    length = length_arg
+                    length = length_arg;
                 } else {
-                    println!("length arg is not numeric");
-                    return;
+                    return Err("length arg is not numeric".to_string());
                 }
             },
             "a" | "advance" => advance = true,
-            _ => {
-                println!("{}", ERROR_MSG);  // 此处应该返回error，或者panic，ERROR_MSG应该在上层中显示
-                return;
-            }
+            _ => return Err("invalid argument".to_string())
         }
     }
 
@@ -43,6 +38,7 @@ pub fn cmd_make(args: &[String], secret_file: &str) {
     println!("Generated secret {}: ********, copied to clipboard", name);
 
     utils::store_secret(name, random_string, secret_file);
+    Ok(()) // 只有写在最后的且没加分号的才会被当成返回值
 }
 
 pub fn cmd_use(name: &str, secret_file: &str) {

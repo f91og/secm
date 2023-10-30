@@ -28,7 +28,7 @@ pub fn pressed_enter(app: &mut App) {
     let secrets_panel = app.panels.get(&PanelName::Secrets).unwrap();
     let selected_index = secrets_panel.index;
     let secret_name = &secrets_panel.content[selected_index];
-    let secret = utils::get_secret(&secret_name, "/Users/xue.a.yu/.psm_secret").unwrap();
+    let secret = utils::get_secret(&secret_name, &utils::get_secret_file_path()).unwrap();
     // 复制到剪贴板
     let mut clipboard = ClipboardContext::new().unwrap();
     clipboard.set_contents(secret).unwrap();

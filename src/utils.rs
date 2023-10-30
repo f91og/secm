@@ -1,7 +1,6 @@
 use rand::Rng;
 use rand::seq::SliceRandom;
-use std::fs;
-use std::{fs::File, io::{Write, BufReader, BufRead}};
+use std::{fs, fs::File, io::{Write, BufReader, BufRead}};
 
 pub fn generate_random_string(length: usize, advance: bool) -> String {
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -76,7 +75,7 @@ pub fn get_secret_file_path() -> String {
 }
 
 // change this function to return secret name list rather than a map
-pub fn get_secret_names(secret_file: &str) -> Vec<String> {
+pub fn get_secret_list(secret_file: &str) -> Vec<String> {
     let mut names = Vec::new();
     let file = File::open(secret_file).expect("Unable to open file");
     let reader = BufReader::new(file);
@@ -88,17 +87,3 @@ pub fn get_secret_names(secret_file: &str) -> Vec<String> {
     }
     names
 }
-
-// pub fn get_secrets(secret_file: &str) -> HashMap<String, String> {
-//     let mut secrets = HashMap::new();
-//     let file = File::open(secret_file).expect("Unable to open file");
-//     let reader = BufReader::new(file);
-//     for line in reader.lines() {
-//         let line = line.expect("Unable to read line");
-//         let mut parts = line.split(":");
-//         let name = parts.next().expect("Unable to get name");
-//         let secret = parts.next().expect("Unable to get secret");
-//         secrets.insert(name.to_string(), secret.to_string());
-//     }
-//     secrets
-// }

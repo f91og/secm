@@ -11,11 +11,11 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
             // cannot borrow `filter_panel.content` as mutable, as it is behind a `&` reference
             // `filter_panel` is a `&` reference, so the data it refers to cannot be borrowed as mutable
             filter_panel.content[0].push(ch);
-            app.filter_secrets();
+            app.refresh_secrets_panel();
         }
         KeyCode::Backspace => {
             filter_panel.content[0].pop();
-            app.filter_secrets();
+            app.refresh_secrets_panel();
         }
         KeyCode::Esc => return Some(()),
         KeyCode::Enter => keymaps::pressed_enter(app), // 复杂的处理放到keymaps里去

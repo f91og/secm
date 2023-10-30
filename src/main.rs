@@ -9,9 +9,16 @@ use tui::{
     Terminal,
 };
 
-use secm::app::App;
+use secm::{app::App, utils};
 use secm::ui;
 use secm::parse_keys;
+
+const ERROR_MSG: &str = r#"
+"Usage:
+ - secm # tui for manage secret
+ - secm make secretName [-l=10 -a=true]/use [secretName])"
+ - secm add secretName secretStr
+"#;
 
 fn main() -> Result<(), io::Error> {
     // 1.初始化终端
@@ -21,10 +28,7 @@ fn main() -> Result<(), io::Error> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // secret list got from file
-    // let secrets = vec!["Item 1".to_string(), "Item 2".to_string(), "Item 3".to_string(),];
-
-    let app = App::new("/Users/xue.a.yu/.psm_secret");
+    let app = App::new(&utils::get_secret_file_path());
 
     // 2.渲染界面
     // let res = run_app(&mut terminal, app)?;
@@ -40,7 +44,8 @@ fn main() -> Result<(), io::Error> {
     terminal.show_cursor()?;
 
     if let Err(err) = res {
-        println!("{:?}", err)
+        println!("{:?}", err);
+        println!("{:?}", ERROR_MSG);
     }
 
     Ok(())
