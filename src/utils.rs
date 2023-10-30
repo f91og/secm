@@ -1,7 +1,7 @@
 use rand::Rng;
 use rand::seq::SliceRandom;
 use std::fs;
-use std::io::Write;
+use std::{fs::File, io::{Write, BufReader, BufRead}};
 
 pub fn generate_random_string(length: usize, advance: bool) -> String {
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -63,7 +63,7 @@ pub fn get_secret(name: &str, secret_file: &str) -> Option<String> {
             }
         }
     }
-    None // 如果未找到匹配的秘密，返回 None
+    None // 如果未找到匹配的secret，返回 None
 }
 
 pub fn get_secret_file_path() -> String {
@@ -74,3 +74,31 @@ pub fn get_secret_file_path() -> String {
         panic!("Unable to determine home directory");
     }
 }
+
+// change this function to return secret name list rather than a map
+pub fn get_secret_names(secret_file: &str) -> Vec<String> {
+    let mut names = Vec::new();
+    let file = File::open(secret_file).expect("Unable to open file");
+    let reader = BufReader::new(file);
+    for line in reader.lines() {
+        let line = line.expect("Unable to read line");
+        let mut parts = line.split(":");
+        let name = parts.next().expect("Unable to get name");
+        names.push(name.trim().to_string());
+    }
+    names
+}
+
+// pub fn get_secrets(secret_file: &str) -> HashMap<String, String> {
+//     let mut secrets = HashMap::new();
+//     let file = File::open(secret_file).expect("Unable to open file");
+//     let reader = BufReader::new(file);
+//     for line in reader.lines() {
+//         let line = line.expect("Unable to read line");
+//         let mut parts = line.split(":");
+//         let name = parts.next().expect("Unable to get name");
+//         let secret = parts.next().expect("Unable to get secret");
+//         secrets.insert(name.to_string(), secret.to_string());
+//     }
+//     secrets
+// }

@@ -15,7 +15,7 @@ pub enum PanelName {
 }
 
 pub struct Panel {
-    pub index: u8,
+    pub index: usize,
     pub panel_name: PanelName,
     pub content: Vec<String>,
 }

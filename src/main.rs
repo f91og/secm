@@ -22,14 +22,9 @@ fn main() -> Result<(), io::Error> {
     let mut terminal = Terminal::new(backend)?;
 
     // secret list got from file
-    let secrets = vec!["Item 1".to_string(), "Item 2".to_string(), "Item 3".to_string(),];
+    // let secrets = vec!["Item 1".to_string(), "Item 2".to_string(), "Item 3".to_string(),];
 
-    let app = App {
-        input: String::new(),
-        secrets: secrets,
-        len_after_filtered: 0,
-        selected_secret_index: 0
-    };
+    let app = App::new("/Users/xue.a.yu/.psm_secret");
 
     // 2.渲染界面
     // let res = run_app(&mut terminal, app)?;
