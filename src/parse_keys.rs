@@ -18,7 +18,10 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
             app.refresh_secrets_panel();
         }
         KeyCode::Esc => return Some(()),
-        KeyCode::Enter => keymaps::pressed_enter(app), // 复杂的处理放到keymaps里去
+        KeyCode::Enter => {
+            keymaps::pressed_enter(app); // 复杂的处理放到keymaps里去
+            return Some(());
+        }
         KeyCode::Up => {
             // Rust编译器的错误信息 "cannot borrow *app as mutable more than once at a time" 表示你在同一作用域内尝试多次获取 *app 的可变引用。
             // 在Rust中，只能有一个可变引用对同一数据进行修改。这是Rust的借用规则之一，旨在确保数据的安全性和避免竞态条件
