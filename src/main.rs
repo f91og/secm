@@ -12,6 +12,7 @@ use tui::{
 use secm::{app::App, utils};
 use secm::ui;
 use secm::parse_keys;
+use secm::cmds;
 
 const ERROR_MSG: &str = r#"
 "Usage:
@@ -20,7 +21,35 @@ const ERROR_MSG: &str = r#"
  - secm add secretName secretStr
 "#;
 
-fn main() -> Result<(), io::Error> {
+fn main() {
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() < 3 {
+        if let Err(err) = scem() {
+            println!("{}", err);
+        }
+        return;
+    }
+
+    let secret_file = &utils::get_secret_file_path();
+
+    let verb = args[1].trim();
+    match verb {
+        "make" => {
+            if let Err(err) = cmds::cmd_make(&args[2..], secret_file) {
+                println!("{}", err);
+            }
+        },
+
+        "add" => {
+            let name = args[2].trim();
+            let value = args[3].trim();
+            utils::store_secret(name, value, secret_file);
+        },
+        _ => {print!("{} {}", ERROR_MSG, verb);},
+    }
+}
+
+fn scem() -> Result<(), io::Error> {
     // 1.初始化终端
     enable_raw_mode()?;
     let mut stdout = io::stdout();

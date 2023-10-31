@@ -10,8 +10,12 @@ scem make secretName -l=20 -a
 scem
 
 scem add secretName secretValue
-scem rm secretName 
 ```
+
+## Todo
+- scem rm secretName
+- add and make should overwrite same secret name after confirm from ui
+- remove add command, add secret can be support as a parameter in make command
 
 ## Memo
 **关于mod, use, crate, pub**
@@ -51,7 +55,6 @@ fn divide(a: i32, b: i32) -> Result<i32, String> {
 
 fn main() {
     let result = divide(8, 2);
-    
     match result {
         Ok(value) => {
             println!("Result: {}", value);

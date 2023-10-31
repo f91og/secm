@@ -41,9 +41,9 @@ pub fn cmd_make(args: &[String], secret_file: &str) -> Result<(), String> {
     Ok(()) // 只有写在最后的且没加分号的才会被当成返回值
 }
 
-pub fn cmd_use(name: &str, secret_file: &str) {
-    let secret = utils::get_secret(name, secret_file).unwrap_or("Secret not found".to_string());
-    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-    ctx.set_contents(secret.to_owned()).expect("Failed to set clipboard content");
-    println!("Use secret {}: ********, copied to clipboard", name);
-}
+// pub fn cmd_use(name: &str, secret_file: &str) {
+//     let secret = utils::get_secret(name, secret_file).unwrap_or("Secret not found".to_string());
+//     let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+//     ctx.set_contents(secret.to_owned()).expect("Failed to set clipboard content");
+//     println!("Use secret {}: ********, copied to clipboard", name);
+// }
