@@ -23,11 +23,14 @@ const ERROR_MSG: &str = r#"
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
-    if args.len() < 3 {
+    if args.len() == 1 {
         if let Err(err) = scem() {
             println!("{}", err);
         }
         return;
+    } 
+    if args.len() < 3  {
+        panic!("{}", ERROR_MSG)
     }
 
     let secret_file = &utils::get_secret_file_path();
