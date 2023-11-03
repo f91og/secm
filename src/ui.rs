@@ -41,7 +41,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .enumerate()
         .map(|(i, item)| {
             let style = if i == secrets_panel.index {
-                Style::default().fg(Color::Yellow).bg(Color::LightCyan)
+                Style::default().fg(Color::Black).bg(Color::LightCyan)
             } else {
                 Style::default()
             };
