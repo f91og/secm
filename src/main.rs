@@ -17,8 +17,8 @@ use secm::cmds;
 const ERROR_MSG: &str = r#"
 "Usage:
  - secm # tui for manage secret
- - secm make secretName [-l=10 -a=true]/use [secretName])"
- - secm add secretName secretStr
+ - secm make secretName [-l=10 -a=true]/use [secretName])" # make a secret
+ - secm make secretName -v=secretStr # add a secret from a string
 "#;
 
 fn main() {
@@ -41,12 +41,6 @@ fn main() {
             if let Err(err) = cmds::cmd_make(&args[2..], secret_file) {
                 println!("{}", err);
             }
-        },
-
-        "add" => {
-            let name = args[2].trim();
-            let value = args[3].trim();
-            utils::store_secret(name, value, secret_file);
         },
         _ => {print!("{} {}", ERROR_MSG, verb);},
     }

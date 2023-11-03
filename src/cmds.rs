@@ -8,14 +8,23 @@ pub fn cmd_make(args: &[String], secret_file: &str) -> Result<(), String> {
 
     let name = args[0].trim();
     if name.starts_with("-") {
-        // println!("{}", ERROR_MSG); // 此处应该返回error，或者panic，ERROR_MSG应该在上层中显示
-        return Err("Invalid name".to_string());
+        return Err("invalid name".to_string());
     }
+
+    let mut value = "".to_string();
 
     for i in 1..args.len() {
         let arg = args[i].trim().trim_start_matches("-");
         let arg_value: Vec<&str> = arg.split("=").collect();
         match arg_value[0] {
+            "v" | "value" => {
+                let value_arg = arg_value[1];
+                if value_arg != "" {
+                    value = value_arg.to_string();
+                } else {
+                    return Err("secret value is empty".to_string());
+                }
+            },
             "l" | "length" => {
                 let length_arg = arg_value[1];
                 // let length = cmd_args.get("length").unwrap_or(&"10");
@@ -32,12 +41,24 @@ pub fn cmd_make(args: &[String], secret_file: &str) -> Result<(), String> {
         }
     }
 
-    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-    let random_string = &utils::generate_random_string(length, advance);
-    ctx.set_contents(random_string.to_owned()).expect("Failed to set clipboard content");
-    println!("Generated secret {}: ********, copied to clipboard", name);
+    if value == "" {
+        value = utils::generate_random_string(length, advance);
+    }
 
-    utils::store_secret(name, random_string, secret_file);
+    let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
+
+    // ---- rust中所有权的问题 --------
+    // 这里要使用value.to_owned())或value.clone()来查创建一个具有独立的所有权的新对象，对原始对象没有影响
+    // set_contents()的参数是 data: String, 这意味着会发生所有权转移
+    ctx.set_contents(value.to_owned()).expect("Failed to set clipboard content");
+    println!("Generated secret {}: ********, copied to clipboard", name);
+    utils::store_secret(name, &value, secret_file);
+
+    // ctx.set_contents(value).expect("Failed to set clipboard content");
+    // println!("Generated secret {}: ********, copied to clipboard", name);
+    // utils::store_secret(name, &value, secret_file);
+    // ------------------------------
+
     Ok(()) // 只有写在最后的且没加分号的才会被当成返回值
 }
 
