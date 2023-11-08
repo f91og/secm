@@ -27,7 +27,6 @@ pub fn cmd_make(args: &[String], secret_file: &str) -> Result<(), String> {
             },
             "l" | "length" => {
                 let length_arg = arg_value[1];
-                // let length = cmd_args.get("length").unwrap_or(&"10");
                 if let Ok(length_arg) = length_arg.parse::<usize>() {
                 // https://stackoverflow.com/questions/37936058/why-does-iterating-over-a-hashmapstr-str-yield-a-str
                 // let random_string = generate_random_string(length, *cmd_args.get("advance").unwrap_or(&"false") == "true");

@@ -3,12 +3,19 @@ use std::collections::HashMap;
 use crate::panel::{Panel, PanelName};
 use crate::utils;
 
+#[derive(PartialEq)]  // 这个宏自动生成 PartialEq 实现
+pub enum Mode {
+    Normal,
+    Filter,
+}
+
 // 结构体必须掌握字段值所有权，因为结构体失效的时候会释放所有字段
 // 不意味着结构体中不定义引用型字段，这需要通过"生命周期"机制来实现
 pub struct App {
     pub secrets: Vec<String>,
     pub panels: HashMap<PanelName, Panel>,
     pub cursor: u8,
+    pub mode: Mode,
     // pub show_popup: bool,
     // pub secrets: Vec<String>, // 存放一些数据或者 UI 状态
 }
@@ -39,6 +46,7 @@ impl App {
             secrets: secrets,
             panels,
             cursor: 0,
+            mode: Mode::Normal,
             // show_popup: false,
             // secrets: Vec::new(),
         }
@@ -48,9 +56,9 @@ impl App {
     //     self.panels.get_mut(&self.current_panel).unwrap()
     // }
 
-    pub fn get_specific_panel(&mut self, name: PanelName) -> &mut Panel {
-        self.panels.get_mut(&name).unwrap()
-    }
+    // pub fn get_specific_panel(&mut self, name: PanelName) -> &mut Panel {
+    //     self.panels.get_mut(&name).unwrap()
+    // }
 
     pub fn refresh_secrets_panel(&mut self) {
         let _keyword = &self.panels.get(&PanelName::Filter).unwrap().content[0];

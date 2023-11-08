@@ -33,3 +33,12 @@ pub fn pressed_enter(app: &mut App) {
     let mut clipboard = ClipboardContext::new().unwrap();
     clipboard.set_contents(secret).unwrap();
 }
+
+pub fn move_cursor_vertical(app: &mut App, step: i8) {
+    let secrets_panel = app.panels.get_mut(&PanelName::Secrets).unwrap();
+    if step == 1 && secrets_panel.index < secrets_panel.content.len() - 1 {
+        secrets_panel.index += 1;
+    } else if step == -1 && secrets_panel.index > 0 {
+        secrets_panel.index -= 1;
+    }
+}
