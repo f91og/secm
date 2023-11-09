@@ -7,6 +7,7 @@ use tui::{
 };
 use unicode_width::UnicodeWidthStr;
 use crate::app::App;
+use crate::app::Mode;
 use crate::panel::PanelName;
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
@@ -20,16 +21,9 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     // Render the filter input
     let filter_panel = app.panels.get(&PanelName::Filter).unwrap();
 
-    let filter_input = Paragraph::new(filter_panel.content[0].clone())
+    let filter_chunk = Paragraph::new(filter_panel.content[0].clone())
        .style(Style::default().fg(Color::Yellow))
        .block(Block::default().borders(Borders::ALL).title("Filter"));
-    f.render_widget(filter_input, chunks[0]);
-    f.set_cursor(
-        // Put cursor past the end of the input text
-        chunks[0].x + filter_panel.content[0].width() as u16 + 1,
-        // Move one line down, from the border to the input line
-        chunks[0].y + 1,
-    );
 
     // Render the list of items
     let items_block = Block::default().borders(Borders::ALL);
@@ -50,8 +44,18 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         })
         .collect();
 
-    let items_list = List::new(items)
+    let secrets_chunk = List::new(items)
             .block(items_block)
             .highlight_style(tui::style::Style::default().fg(tui::style::Color::Yellow));
-    f.render_widget(items_list, chunks[1]);
+
+    if app.mode == Mode::Filter {
+        f.render_widget(filter_chunk, chunks[0]);
+        f.set_cursor(
+            // Put cursor past the end of the input text
+            chunks[0].x + filter_panel.content[0].width() as u16 + 1,
+            // Move one line down, from the border to the input line
+            chunks[0].y + 1,
+        );
+    }
+    f.render_widget(secrets_chunk, chunks[1]);
 }

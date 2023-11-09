@@ -30,7 +30,15 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
             filter_panel.content[0].pop();
             app.refresh_secrets_panel();
         }
-        KeyCode::Esc => return Some(()),
+        KeyCode::Esc => {
+            if app.mode == Mode::Normal {
+                return Some(());
+            } else {
+                filter_panel.content[0].clear();
+                app.refresh_secrets_panel();
+                app.mode = Mode::Normal;
+            }
+        }
         KeyCode::Enter => {
             if app.mode == Mode::Normal {
                 keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
