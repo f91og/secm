@@ -31,21 +31,15 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
             app.refresh_secrets_panel();
         }
         KeyCode::Esc => {
-            if app.mode == Mode::Normal {
-                return Some(());
-            } else {
+            if app.mode == Mode::Filter {
                 filter_panel.content[0].clear();
                 app.refresh_secrets_panel();
                 app.mode = Mode::Normal;
             }
         }
         KeyCode::Enter => {
-            if app.mode == Mode::Normal {
-                keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
-                return Some(());
-            } else {
-                app.mode = Mode::Normal
-            }
+            keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
+            return Some(());
         }
         KeyCode::Up => {
             keymaps::move_cursor_vertical(app, -1);
