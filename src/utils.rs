@@ -1,6 +1,6 @@
 use rand::Rng;
 use rand::seq::SliceRandom;
-use std::{fs, fs::File, io::{Write, BufReader, BufRead}};
+use std::{fs::File, io::{Write, BufReader, BufRead, BufWriter}, collections::HashMap};
 
 pub fn generate_random_string(length: usize, advance: bool) -> String {
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -33,37 +33,37 @@ pub fn generate_random_string(length: usize, advance: bool) -> String {
     }
 }
 
-pub fn store_secret(name: &str, value: &str, secret_file: &str) {
-    let row = format!("{}: {}\n", name, value);
+// pub fn store_secret(name: &str, value: &str, secret_file: &str) {
+//     let row = format!("{}: {}\n", name, value);
 
-    // 打开文件并以追加模式写入
-    let mut file = fs::OpenOptions::new()
-        .write(true)
-        .append(true)
-        .open(secret_file)
-        .expect("Unable to open file");
+//     // 打开文件并以追加模式写入
+//     let mut file = fs::OpenOptions::new()
+//         .write(true)
+//         .append(true)
+//         .open(secret_file)
+//         .expect("Unable to open file");
 
-    // 写入内容到文件
-    file.write_all(row.as_bytes())
-        .expect("Unable to write to file");
+//     // 写入内容到文件
+//     file.write_all(row.as_bytes())
+//         .expect("Unable to write to file");
 
-    println!("Secret stored in {}", secret_file);
-}
+//     println!("Secret stored in {}", secret_file);
+// }
 
-pub fn get_secret(name: &str, secret_file: &str) -> Option<String> {
-    if let Ok(file_content) = fs::read_to_string(secret_file) {
-        for line in file_content.lines() {
-            if line.starts_with(&format!("{}:", name)) {
-                // 找到匹配的行，解析出秘密值并返回
-                let secret = line.splitn(2, ':').nth(1);
-                if let Some(secret) = secret {
-                    return Some(secret.trim().to_string());
-                }
-            }
-        }
-    }
-    None // 如果未找到匹配的secret，返回 None
-}
+// pub fn get_secret(name: &str, secret_file: &str) -> Option<String> {
+//     if let Ok(file_content) = fs::read_to_string(secret_file) {
+//         for line in file_content.lines() {
+//             if line.starts_with(&format!("{}:", name)) {
+//                 // 找到匹配的行，解析出秘密值并返回
+//                 let secret = line.splitn(2, ':').nth(1);
+//                 if let Some(secret) = secret {
+//                     return Some(secret.trim().to_string());
+//                 }
+//             }
+//         }
+//     }
+//     None // 如果未找到匹配的secret，返回 None
+// }
 
 pub fn get_secret_file_path() -> String {
     if let Some(home_dir) = dirs::home_dir() {
@@ -75,15 +75,31 @@ pub fn get_secret_file_path() -> String {
 }
 
 // change this function to return secret name list rather than a map
-pub fn get_secret_list(secret_file: &str) -> Vec<String> {
-    let mut names = Vec::new();
+pub fn get_secrets(secret_file: &str) -> HashMap<String, String> {
+    let mut secrets = HashMap::new();
+
     let file = File::open(secret_file).expect("Unable to open file");
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = line.expect("Unable to read line");
         let mut parts = line.split(":");
         let name = parts.next().expect("Unable to get name");
-        names.push(name.trim().to_string());
+        let value = parts.next().expect("Unable to get value");
+        // add name-value to secrets
+        secrets.insert(name.to_string(), value.trim().to_string());
     }
-    names
+
+    secrets
+}
+
+// a method that sync a Vec<string> to secret file
+pub fn sync_secrets_to_file(secrets: &HashMap<String, String>, secret_file: &str) {
+    let file = File::create(secret_file).expect("Unable to open file");
+    let mut writer = BufWriter::new(file);
+
+    // iterate through secrets map and write each to file
+    for (name, value) in secrets.iter() {
+        let secret = format!("{}:{}\n", name, value);
+        writer.write_all(secret.as_bytes()).expect("Unable to write secret");
+    }
 }

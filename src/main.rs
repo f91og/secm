@@ -28,17 +28,17 @@ fn main() {
             println!("{}", err);
         }
         return;
-    } 
+    }
     if args.len() < 3  {
         panic!("{}", ERROR_MSG)
     }
 
-    let secret_file = &utils::get_secret_file_path();
+    // let secret_file = &utils::get_secret_file_path();
 
     let verb = args[1].trim();
     match verb {
         "make" => {
-            if let Err(err) = cmds::cmd_make(&args[2..], secret_file) {
+            if let Err(err) = cmds::cmd_make(&args[2..]) {
                 println!("{}", err);
             }
         },

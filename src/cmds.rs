@@ -2,7 +2,7 @@ use crate::utils;
 use clipboard::ClipboardProvider;
 use clipboard::ClipboardContext;
 
-pub fn cmd_make(args: &[String], secret_file: &str) -> Result<(), String> {
+pub fn cmd_make(args: &[String]) -> Result<(), String> {
     let mut length = 10;
     let mut advance = false;
 
@@ -51,7 +51,7 @@ pub fn cmd_make(args: &[String], secret_file: &str) -> Result<(), String> {
     // set_contents()的参数是 data: String, 这意味着会发生所有权转移
     ctx.set_contents(value.to_owned()).expect("Failed to set clipboard content");
     println!("Generated secret {}: ********, copied to clipboard", name);
-    utils::store_secret(name, &value, secret_file);
+    // utils::store_secret(name, &value, secret_file);
 
     // ctx.set_contents(value).expect("Failed to set clipboard content");
     // println!("Generated secret {}: ********, copied to clipboard", name);

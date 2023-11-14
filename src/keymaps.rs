@@ -1,6 +1,5 @@
 use crate::app::App;
 use crate::panel::PanelName;
-use crate::utils;
 // use std::io::{BufRead, BufReader};
 // use crate::commands;
 use clipboard::{ClipboardContext, ClipboardProvider};
@@ -29,7 +28,7 @@ pub fn pressed_enter(app: &mut App) {
     let selected_index = secrets_panel.index;
     if secrets_panel.content.len() > 0 {
         let secret_name = &secrets_panel.content[selected_index];
-        let secret = utils::get_secret(&secret_name, &utils::get_secret_file_path()).unwrap();
+        let secret = app.secrets.get(secret_name).unwrap().clone();
         // 复制到剪贴板
         let mut clipboard = ClipboardContext::new().unwrap();
         clipboard.set_contents(secret).unwrap();
