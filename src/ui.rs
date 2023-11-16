@@ -1,7 +1,7 @@
 use tui::{
     backend::Backend,
-    layout::{Constraint, Direction, Layout, Alignment},
-    widgets::{Block, Borders, List, ListItem, Paragraph},
+    layout::{Constraint, Direction, Layout, Alignment, Rect},
+    widgets::{Block, Borders, List, ListItem, Paragraph, Clear},
     style::{Color, Style},
     Frame,
 };
@@ -44,7 +44,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .block(Block::default().borders(Borders::ALL))
             .highlight_style(tui::style::Style::default().fg(tui::style::Color::Yellow));
 
-    let command_guides = "shift + d: delete secret, shift + a: add secret, v: show secret content, enter: copy secret to clipboard, /: filter secrets";
+    let command_guides = "shift + d: delete, shift + a: add secret, v: show content, enter: copy to clipboard, /: filter secrets, r: rename";
     let command_guides_chunk = Paragraph::new(command_guides).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
 
     if app.mode == Mode::Filter {
@@ -55,7 +55,53 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             // Move one line down, from the border to the input line
             chunks[0].y + 1,
         );
+    } else if app.mode == Mode::Rename {
+        // let current_secret = app.get_selected_secret();
+        // let title = &(String::from("hello") + &current_secret);
+        // let block = Block::default().title("rename secret").borders(Borders::ALL);
+        let rename_secret_chunk = Paragraph::new(app.panels.get(&PanelName::RenameSecret).unwrap().content[0].clone())
+            .style(Style::default().fg(Color::Yellow))
+            .block(Block::default().borders(Borders::ALL).title("rename secret"));
+        let area = centered_rect(60, 7, size); // here dose size come from?
+        f.render_widget(Clear, area); //this clears out the background
+        f.render_widget(rename_secret_chunk, area);
+    } else if app.mode == Mode::Make {
+
     }
     f.render_widget(secrets_chunk, chunks[1]);
     f.render_widget(command_guides_chunk, chunks[2]);
+
+    // if app.show_rename_popup {
+    //     let block = Block::default().title("Popup").borders(Borders::ALL);
+    //     let area = centered_rect(60, 20, size);
+    //     f.render_widget(Clear, area); //this clears out the background
+    //     f.render_widget(block, area);
+    // }
+}
+
+/// helper function to create a centered rect using up certain percentage of the available rect `r`
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints(
+            [
+                Constraint::Percentage((100 - percent_y) / 2),
+                Constraint::Percentage(percent_y),
+                Constraint::Percentage((100 - percent_y) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints(
+            [
+                Constraint::Percentage((100 - percent_x) / 2),
+                Constraint::Percentage(percent_x),
+                Constraint::Percentage((100 - percent_x) / 2),
+            ]
+            .as_ref(),
+        )
+        .split(popup_layout[1])[1]
 }

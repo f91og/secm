@@ -6,48 +6,74 @@ use crossterm::event::{KeyCode, KeyEvent};
 
 pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
     // https://www.reddit.com/r/rust/comments/17qi2oq/why_here_occurs_error_cannot_borrow_appmode_as/
-    let filter_panel = app.panels.get_mut(&PanelName::Filter).unwrap(); // ok
+    // let filter_panel = app.panels.get_mut(&PanelName::Filter).unwrap(); // ok
     // let filter_panel = app.get_specific_panel(PanelName::Filter); // not ok
 
-    match key.code {
-        KeyCode::Char(ch) => {
-            if ch == '/' && app.mode == Mode::Normal {
-                app.mode = Mode::Filter;
-            } else if app.mode == Mode::Filter {
-                filter_panel.content[0].push(ch);
-                app.refresh_secrets_panel();
-            } else if app.mode == Mode::Normal {
-                if ch == 'q' {
-                    return Some(())
-                } else if ch == 'j' {
-                    keymaps::move_cursor_vertical(app, 1);
-                } else if ch == 'k' {
-                    keymaps::move_cursor_vertical(app, -1);
+    match app.mode {
+        Mode::Normal => {
+            match key.code {
+                KeyCode::Char(ch) => {
+                    match ch {
+                        'q' => return Some(()),
+                        'j' => keymaps::move_cursor_vertical(app, 1),
+                        'k' => keymaps::move_cursor_vertical(app, -1),
+                        'r' => app.mode = Mode::Rename,
+                        'm' => app.mode = Mode::Make,
+                        '/' => app.mode = Mode::Filter,
+                        _ => {}
+                    }
                 }
+                _ => {}
             }
         }
-        KeyCode::Backspace => {
-            filter_panel.content[0].pop();
-            app.refresh_secrets_panel();
-        }
-        KeyCode::Esc => {
-            if app.mode == Mode::Filter {
-                filter_panel.content[0].clear();
-                app.refresh_secrets_panel();
-                app.mode = Mode::Normal;
+        Mode::Filter => {
+            match key.code {
+                KeyCode::Char(ch) => {
+                    app.panels.get_mut(&PanelName::Filter).unwrap().content[0].push(ch);
+                    app.filter_secrets_panel();
+                }
+                KeyCode::Backspace => {
+                    app.panels.get_mut(&PanelName::Filter).unwrap().content[0].pop();
+                    app.filter_secrets_panel();
+                }
+                KeyCode::Esc => {
+                    app.panels.get_mut(&PanelName::Filter).unwrap().content[0].clear();
+                    app.filter_secrets_panel();
+                    app.mode = Mode::Normal;
+                }
+                KeyCode::Enter => {
+                    keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
+                    return Some(());
+                }
+                _ => {}
             }
         }
-        KeyCode::Enter => {
-            keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
-            return Some(());
+        Mode::Make  => {
+            match key.code {
+                KeyCode::Esc => app.mode = Mode::Normal,
+                _ => {}
+            }
         }
-        KeyCode::Up => {
-            keymaps::move_cursor_vertical(app, -1);
+        Mode::Rename  => {
+            match key.code {
+                KeyCode::Char(ch) => {
+                    app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].push(ch);
+                }
+                KeyCode::Backspace => {
+                    app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].pop();
+                }
+                KeyCode::Esc => {
+                    app.mode = Mode::Normal;
+                    app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].clear();
+                }
+                KeyCode::Enter => {
+                    keymaps::pressed_enter(app);
+                    app.mode = Mode::Normal;
+                    app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].clear();
+                }
+                _ => {}
+            }
         }
-        KeyCode::Down => {
-            keymaps::move_cursor_vertical(app, 1);
-        }
-        _ => {}
     }
     None
 }

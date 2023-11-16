@@ -1,6 +1,6 @@
 use rand::Rng;
 use rand::seq::SliceRandom;
-use std::{fs::File, io::{Write, BufReader, BufRead, BufWriter}, collections::HashMap};
+use std::{fs::File, io::{Write, BufReader, BufRead, BufWriter}, collections::BTreeMap};
 
 pub fn generate_random_string(length: usize, advance: bool) -> String {
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -75,8 +75,8 @@ pub fn get_secret_file_path() -> String {
 }
 
 // change this function to return secret name list rather than a map
-pub fn get_secrets(secret_file: &str) -> HashMap<String, String> {
-    let mut secrets = HashMap::new();
+pub fn get_secrets(secret_file: &str) -> BTreeMap<String, String> {
+    let mut secrets = BTreeMap::new();
 
     let file = File::open(secret_file).expect("Unable to open file");
     let reader = BufReader::new(file);
@@ -93,8 +93,8 @@ pub fn get_secrets(secret_file: &str) -> HashMap<String, String> {
 }
 
 // a method that sync a Vec<string> to secret file
-pub fn sync_secrets_to_file(secrets: &HashMap<String, String>, secret_file: &str) {
-    let file = File::create(secret_file).expect("Unable to open file");
+pub fn sync_secrets_to_file(secrets: &BTreeMap<String, String>) {
+    let file = File::create(get_secret_file_path()).expect("Unable to open file");
     let mut writer = BufWriter::new(file);
 
     // iterate through secrets map and write each to file

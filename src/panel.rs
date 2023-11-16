@@ -12,6 +12,8 @@ a                       cargo add
 pub enum PanelName {
     Filter,
     Secrets,
+    // MakeSecret,
+    RenameSecret,
 }
 
 pub struct Panel {
@@ -27,6 +29,8 @@ impl Panel {
         let [name, page]: [&str; 2] = match self.panel_name {
             PanelName::Filter => ["filter", CRATES_HELP],
             PanelName::Secrets => ["secrets", CRATES_HELP],
+            // PanelName::MakeSecret => ["make secret", CRATES_HELP],
+            PanelName::RenameSecret => ["rename secret", CRATES_HELP],
         };
         format!("This is a help page for `{}` module!\n{}", name, page)
     }
