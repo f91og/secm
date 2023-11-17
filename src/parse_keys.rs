@@ -17,11 +17,18 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                         'q' => return Some(()),
                         'j' => keymaps::move_cursor_vertical(app, 1),
                         'k' => keymaps::move_cursor_vertical(app, -1),
-                        'r' => app.mode = Mode::Rename,
+                        'r' => {
+                            app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0] = app.get_selected_secret();
+                            app.mode = Mode::Rename
+                        },
                         'm' => app.mode = Mode::Make,
                         '/' => app.mode = Mode::Filter,
                         _ => {}
                     }
+                }
+                KeyCode::Enter => {
+                    keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
+                    return Some(());
                 }
                 _ => {}
             }
