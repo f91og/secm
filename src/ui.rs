@@ -56,12 +56,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             chunks[0].y + 1,
         );
     } else if app.mode == Mode::Rename {
-        // let current_secret = app.get_selected_secret();
-        // let title = &(String::from("hello") + &current_secret);
-        // let block = Block::default().title("rename secret").borders(Borders::ALL);
+        let (current_secret, _) = app.get_selected_secret();
         let rename_secret_chunk = Paragraph::new(app.panels.get(&PanelName::RenameSecret).unwrap().content[0].clone())
             .style(Style::default().fg(Color::Yellow))
-            .block(Block::default().borders(Borders::ALL).title("rename secret"));
+            .block(Block::default().borders(Borders::ALL).title(format!("rename {}", current_secret)));
         let area = centered_rect(60, 7, size); // here dose size come from?
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(rename_secret_chunk, area);

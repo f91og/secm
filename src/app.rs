@@ -77,9 +77,34 @@ impl App {
     }
 
     // get current secret in Secrets Panel
-    pub fn get_selected_secret(&mut self) -> String {
+    pub fn get_selected_secret(&mut self) -> (String, String) {
         let current_index = self.panels.get(&PanelName::Secrets).unwrap().index;
-        let current_secret = &self.panels.get(&PanelName::Secrets).unwrap().content[current_index];
-        return current_secret.to_owned();
+        let name = &self.panels.get(&PanelName::Secrets).unwrap().content[current_index];
+        let value = self.secrets.get(name).unwrap();
+        return (name.to_owned(), value.to_owned());
+    }
+
+    pub fn delete_secret(&mut self) -> Result<String, String> {
+        let (current_secret, _) = self.get_selected_secret();
+        if self.secrets.remove(&current_secret).is_none() {
+            return Err("Secret not found".to_string());
+        }
+        self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
+        utils::sync_secrets_to_file(&self.secrets);
+        return Ok("Secret deleted".to_string());
+    }
+
+    pub fn rename_secret(&mut self) -> Result<(), String> {
+        let (current_secret, _)  = self.get_selected_secret();
+        let new_secret_name = &self.panels.get(&PanelName::RenameSecret).unwrap().content[0];
+        let secret_value = self.secrets.get(&current_secret).unwrap();
+        if self.secrets.contains_key(new_secret_name) {
+            return Err("Secret already exists".to_string());
+        }
+        self.secrets.insert(new_secret_name.clone(), secret_value.clone());
+        self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
+        self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
+        utils::sync_secrets_to_file(&self.secrets);
+        return Ok(());
     }
 }

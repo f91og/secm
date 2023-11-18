@@ -18,7 +18,8 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                         'j' => keymaps::move_cursor_vertical(app, 1),
                         'k' => keymaps::move_cursor_vertical(app, -1),
                         'r' => {
-                            app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0] = app.get_selected_secret();
+                            let (current_secret, _) = app.get_selected_secret();
+                            app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0] = current_secret;
                             app.mode = Mode::Rename
                         },
                         'm' => app.mode = Mode::Make,

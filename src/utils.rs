@@ -82,10 +82,10 @@ pub fn get_secrets(secret_file: &str) -> BTreeMap<String, String> {
     let reader = BufReader::new(file);
     for line in reader.lines() {
         let line = line.expect("Unable to read line");
-        let mut parts = line.split(":");
-        let name = parts.next().expect("Unable to get name");
-        let value = parts.next().expect("Unable to get value");
-        // add name-value to secrets
+        let mut parts = line.split(" ");
+        // _ = parts.next().expect("Unable to get secret"); // todo: make secret possible to be empty
+        let name = parts.next().expect("Unable to get secret name");
+        let value = parts.next().expect("Unable to get secret value");
         secrets.insert(name.to_string(), value.trim().to_string());
     }
 
@@ -99,7 +99,7 @@ pub fn sync_secrets_to_file(secrets: &BTreeMap<String, String>) {
 
     // iterate through secrets map and write each to file
     for (name, value) in secrets.iter() {
-        let secret = format!("{}:{}\n", name, value);
+        let secret = format!("{} {}\n", name, value);
         writer.write_all(secret.as_bytes()).expect("Unable to write secret");
     }
 }
