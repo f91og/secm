@@ -9,11 +9,13 @@ pub enum Mode {
     Normal,
     Filter,
     Make,
+    Add,
     Rename,
 }
 
 // 结构体必须掌握字段值所有权，因为结构体失效的时候会释放所有字段
 // 不意味着结构体中不定义引用型字段，这需要通过"生命周期"机制来实现
+// App负责管理状态数据，并提供方法来修改状态
 pub struct App {
     pub secrets: BTreeMap<String, String>,
     pub panels: HashMap<PanelName, Panel>,
@@ -24,8 +26,8 @@ pub struct App {
 
 // 为结构体添加方法
 impl App {
-    pub fn new(secret_file: &str) -> App {
-        let secrets = utils::get_secrets(secret_file);
+    pub fn new() -> App {
+        let secrets = utils::get_secrets(&utils::get_secret_file_path());
         let panels = HashMap::from([
             (
                 PanelName::Filter,
@@ -49,6 +51,22 @@ impl App {
                     index: 0,
                     panel_name: PanelName::RenameSecret,
                     content: vec!["".to_string()],
+                }
+            ),
+            (
+                PanelName::MakeSecret,
+                Panel {
+                    index: 0,
+                    panel_name: PanelName::MakeSecret,
+                    content: vec!["".to_string()],
+                }
+            ),
+            (
+                PanelName::AddSecret,
+                Panel {
+                    index: 0,
+                    panel_name: PanelName::AddSecret,
+                    content: vec!["".to_string(), "".to_string()],
                 }
             )
         ]);
@@ -84,14 +102,14 @@ impl App {
         return (name.to_owned(), value.to_owned());
     }
 
-    pub fn delete_secret(&mut self) -> Result<String, String> {
+    pub fn delete_secret(&mut self) -> Result<(), String> {
         let (current_secret, _) = self.get_selected_secret();
         if self.secrets.remove(&current_secret).is_none() {
             return Err("Secret not found".to_string());
         }
         self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
         utils::sync_secrets_to_file(&self.secrets);
-        return Ok("Secret deleted".to_string());
+        Ok(())
     }
 
     pub fn rename_secret(&mut self) -> Result<(), String> {
@@ -105,6 +123,29 @@ impl App {
         self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
         self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
         utils::sync_secrets_to_file(&self.secrets);
-        return Ok(());
+        Ok(())
+    }
+
+    pub fn back_to_normal_mode(&mut self) {
+        self.mode = Mode::Normal;
+        self.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].clear();
+        self.panels.get_mut(&PanelName::Filter).unwrap().content[0].clear();
+        self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
+        self.panels.get_mut(&PanelName::AddSecret).unwrap().content[0].clear();
+        self.panels.get_mut(&PanelName::AddSecret).unwrap().content[1].clear();
+    }
+
+    pub fn add_secret (&mut self) -> Result<(), String> {
+        let new_secret_name = self.panels.get(&PanelName::AddSecret).unwrap().content[0].trim();
+        let new_secret_value = self.panels.get(&PanelName::AddSecret).unwrap().content[1].trim();
+        if new_secret_name.is_empty() || new_secret_value.is_empty() {
+            return Err("Secret name and value cannot be empty".to_string());
+        }
+        if self.secrets.contains_key(new_secret_name) {
+            return Err("Secret already exists".to_string());
+        }
+        self.secrets.insert(new_secret_name.to_string(), new_secret_value.to_string());
+        utils::sync_secrets_to_file(&self.secrets);
+        Ok(())
     }
 }

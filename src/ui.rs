@@ -20,7 +20,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
     // Render the filter input
     let filter_panel = app.panels.get(&PanelName::Filter).unwrap();
-    let filter_chunk = Paragraph::new(filter_panel.content[0].clone())
+    let filter_chunk = Paragraph::new(app.panels.get(&PanelName::Filter).unwrap().content[0].clone())
        .style(Style::default().fg(Color::Yellow))
        .block(Block::default().borders(Borders::ALL).title("Filter"));
 
@@ -63,8 +63,55 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let area = centered_rect(60, 7, size); // here dose size come from?
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(rename_secret_chunk, area);
-    } else if app.mode == Mode::Make {
+    } else if app.mode == Mode::Add {
+        let name_area = centered_rect(30, 7, size);
+        let mut value_area = centered_rect(30, 7, size);
+        value_area.y += 2; // position below name area
 
+        let name_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
+            .split(name_area);
+
+        let value_layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
+            .split(value_area);
+
+        let name_label = Paragraph::new("name: ")
+            .style(Style::default().fg(Color::Yellow));
+        let name_input = Paragraph::new(app.panels.get(&PanelName::AddSecret).unwrap().content[0].clone())
+            .style(Style::default()
+            .fg(Color::Yellow))
+            .block(Block::default());
+
+        f.render_widget(Clear, name_area);
+        f.render_widget(name_label, name_layout[0]);
+        f.render_widget(name_input, name_layout[1]);
+
+        let value_label = Paragraph::new("value: ")
+            .style(Style::default().fg(Color::Yellow)); 
+        let value_input = Paragraph::new(app.panels.get(&PanelName::AddSecret).unwrap().content[1].clone())
+            .style(Style::default()
+            .fg(Color::Yellow))
+            .block(Block::default());
+
+        f.render_widget(Clear, value_area);
+        f.render_widget(value_label, value_layout[0]);
+        f.render_widget(value_input, value_layout[1]);
+
+        if app.panels.get(&PanelName::AddSecret).unwrap().index == 0 {
+            f.set_cursor(
+                // Put cursor past the end of the input text
+                name_layout[1].x + app.panels.get(&PanelName::AddSecret).unwrap().content[0].width() as u16,
+                name_layout[1].y
+            )
+        } else {
+            f.set_cursor(
+                value_layout[1].x + app.panels.get(&PanelName::AddSecret).unwrap().content[1].width() as u16,
+                value_layout[1].y
+            )
+        }
     }
     f.render_widget(secrets_chunk, chunks[1]);
     f.render_widget(command_guides_chunk, chunks[2]);

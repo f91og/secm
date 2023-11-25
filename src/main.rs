@@ -9,7 +9,7 @@ use tui::{
     Terminal,
 };
 
-use secm::{app::App, utils};
+use secm::app::App;
 use secm::ui;
 use secm::parse_keys;
 use secm::cmds;
@@ -54,7 +54,7 @@ fn scem() -> Result<(), io::Error> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let app = App::new(&utils::get_secret_file_path());
+    let app = App::new();
 
     // 2.渲染界面
     // let res = run_app(&mut terminal, app)?;

@@ -23,10 +23,13 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                             app.mode = Mode::Rename
                         },
                         'm' => app.mode = Mode::Make,
+                        'a' => app.mode = Mode::Add,
                         '/' => app.mode = Mode::Filter,
                         _ => {}
                     }
                 }
+                KeyCode::Down => keymaps::move_cursor_vertical(app, 1),
+                KeyCode::Up => keymaps::move_cursor_vertical(app, -1),
                 KeyCode::Enter => {
                     keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
                     return Some(());
@@ -44,15 +47,13 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                     app.panels.get_mut(&PanelName::Filter).unwrap().content[0].pop();
                     app.filter_secrets_panel();
                 }
-                KeyCode::Esc => {
-                    app.panels.get_mut(&PanelName::Filter).unwrap().content[0].clear();
-                    app.filter_secrets_panel();
-                    app.mode = Mode::Normal;
-                }
+                KeyCode::Esc => app.back_to_normal_mode(),
                 KeyCode::Enter => {
                     keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
                     return Some(());
                 }
+                KeyCode::Down => keymaps::move_cursor_vertical(app, 1),
+                KeyCode::Up => keymaps::move_cursor_vertical(app, -1),
                 _ => {}
             }
         }
@@ -70,14 +71,37 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                 KeyCode::Backspace => {
                     app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].pop();
                 }
-                KeyCode::Esc => {
-                    app.mode = Mode::Normal;
-                    app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].clear();
+                KeyCode::Esc => app.back_to_normal_mode(),
+                KeyCode::Enter => {
+                    keymaps::pressed_enter(app);
+                    app.back_to_normal_mode();
+                }
+                _ => {}
+            }
+        }
+        Mode::Add => {
+            match key.code {
+                KeyCode::Char(ch) => {
+                    let current_content_index = app.panels.get(&PanelName::AddSecret).unwrap().index;
+                    app.panels.get_mut(&PanelName::AddSecret).unwrap().content[current_content_index].push(ch);
+                }
+                KeyCode::Backspace => {
+                    let current_content_index = app.panels.get(&PanelName::AddSecret).unwrap().index;
+                    app.panels.get_mut(&PanelName::AddSecret).unwrap().content[current_content_index].pop();
                 }
                 KeyCode::Enter => {
                     keymaps::pressed_enter(app);
-                    app.mode = Mode::Normal;
-                    app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].clear();
+                    app.back_to_normal_mode();
+                }
+                KeyCode::Esc => app.back_to_normal_mode(),
+                KeyCode::Tab => {
+                    let current_content_index = app.panels.get(&PanelName::AddSecret).unwrap().index;
+                    // toggle between fields
+                    if current_content_index == 0 {
+                        app.panels.get_mut(&PanelName::AddSecret).unwrap().index = 1;
+                    } else {
+                        app.panels.get_mut(&PanelName::AddSecret).unwrap().index = 0;
+                    }
                 }
                 _ => {}
             }
