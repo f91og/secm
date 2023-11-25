@@ -70,12 +70,12 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
         let name_layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
+            .constraints([Constraint::Length("name:".width() as u16 + 1), Constraint::Percentage(80)].as_ref())
             .split(name_area);
 
         let value_layout = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(20), Constraint::Percentage(80)].as_ref())
+            .constraints([Constraint::Length("value:".width() as u16 + 1), Constraint::Percentage(80)].as_ref())
             .split(value_area);
 
         let name_label = Paragraph::new("name: ")
@@ -116,12 +116,30 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     f.render_widget(secrets_chunk, chunks[1]);
     f.render_widget(command_guides_chunk, chunks[2]);
 
-    // if app.show_rename_popup {
-    //     let block = Block::default().title("Popup").borders(Borders::ALL);
-    //     let area = centered_rect(60, 20, size);
-    //     f.render_widget(Clear, area); //this clears out the background
-    //     f.render_widget(block, area);
-    // }
+    if app.mode == Mode::Delete {
+        let (current_secret, _) = app.get_selected_secret();
+        let confirm_area = centered_rect(30, 7, size);
+
+        let confirm_text = format!("delete {}? y/n:", current_secret);
+        let layout = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Length(confirm_text.width() as u16 + 1), Constraint::Percentage(80)].as_ref())
+            .split(confirm_area);
+
+        let confirm_label = Paragraph::new(confirm_text)
+            .style(Style::default().fg(Color::Yellow));
+        let confirm_input = Paragraph::new(app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].clone())
+            .style(Style::default()
+            .fg(Color::Yellow))
+            .block(Block::default());
+
+        f.render_widget(confirm_label, layout[0]);
+        f.render_widget(confirm_input, layout[1]);
+        f.set_cursor(
+            layout[1].x + app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].width() as u16,
+            layout[1].y
+        )
+    }
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`

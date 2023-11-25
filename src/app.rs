@@ -11,6 +11,7 @@ pub enum Mode {
     Make,
     Add,
     Rename,
+    Delete,
 }
 
 // 结构体必须掌握字段值所有权，因为结构体失效的时候会释放所有字段
@@ -67,6 +68,14 @@ impl App {
                     index: 0,
                     panel_name: PanelName::AddSecret,
                     content: vec!["".to_string(), "".to_string()],
+                }
+            ),
+            (
+                PanelName::DeleteSecret,
+                Panel {
+                    index: 0,
+                    panel_name: PanelName::DeleteSecret,
+                    content: vec!["".to_string()],
                 }
             )
         ]);
@@ -133,6 +142,7 @@ impl App {
         self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
         self.panels.get_mut(&PanelName::AddSecret).unwrap().content[0].clear();
         self.panels.get_mut(&PanelName::AddSecret).unwrap().content[1].clear();
+        self.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].clear();
     }
 
     pub fn add_secret (&mut self) -> Result<(), String> {

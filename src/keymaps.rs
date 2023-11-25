@@ -12,6 +12,11 @@ pub fn pressed_enter(app: &mut App) {
         Mode::Add => {
             _ = app.add_secret();
         }
+        Mode::Delete => {
+            if app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].trim() == "y" {
+                _ = app.delete_secret();
+            }
+        }
         _ => {
             let (_, secret) = app.get_selected_secret();
                 // 复制到剪贴板

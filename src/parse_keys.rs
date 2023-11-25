@@ -25,6 +25,7 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                         'm' => app.mode = Mode::Make,
                         'a' => app.mode = Mode::Add,
                         '/' => app.mode = Mode::Filter,
+                        'd' => app.mode = Mode::Delete,
                         _ => {}
                     }
                 }
@@ -102,6 +103,22 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                     } else {
                         app.panels.get_mut(&PanelName::AddSecret).unwrap().index = 0;
                     }
+                }
+                _ => {}
+            }
+        }
+        Mode::Delete => {
+            match key.code {
+                KeyCode::Char(ch) => {
+                    app.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].push(ch);
+                }
+                KeyCode::Backspace => {
+                    app.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].pop();
+                }
+                KeyCode::Esc => app.back_to_normal_mode(),
+                KeyCode::Enter => {
+                    keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
+                    app.back_to_normal_mode();
                 }
                 _ => {}
             }
