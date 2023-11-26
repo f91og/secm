@@ -12,17 +12,20 @@ use crate::panel::PanelName;
 
 pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     let size = f.size();
-    let chunks = Layout::default() // 首先获取默认构造
+
+    let mut chunks = Layout::default() // 首先获取默认构造
         .direction(Direction::Vertical) // 垂直分割
         .margin(2)
-        .constraints([Constraint::Length(3), Constraint::Min(0), Constraint::Length(3)].as_ref()) // 画了3个chunk，后面填充内容
+        .constraints([Constraint::Max(0), Constraint::Min(0), Constraint::Length(3)].as_ref()) // 画了3个chunk，后面填充内容
         .split(size);
 
     // Render the filter input
     let filter_panel = app.panels.get(&PanelName::Filter).unwrap();
-    let filter_chunk = Paragraph::new(app.panels.get(&PanelName::Filter).unwrap().content[0].clone())
-       .style(Style::default().fg(Color::Yellow))
-       .block(Block::default().borders(Borders::ALL).title("Filter"));
+    let filter_chunk = Paragraph::new(filter_panel.content[0].clone())
+       .style(Style::default()
+       .fg(Color::Yellow))
+       .block(Block::default()
+       .borders(Borders::ALL).title("Filter"));
 
     // Render the list of secrets
     let secrets_panel = app.panels.get(&PanelName::Secrets).unwrap();
@@ -41,21 +44,33 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .collect();
 
     let secrets_chunk = List::new(secrets)
-            .block(Block::default().borders(Borders::ALL))
-            .highlight_style(tui::style::Style::default().fg(tui::style::Color::Yellow));
+        .block(Block::default()
+        .borders(Borders::ALL))
+        .highlight_style(Style::default()
+        .fg(Color::Yellow));
 
     let command_guides = "shift + d: delete, shift + a: add secret, v: show content, enter: copy to clipboard, /: filter secrets, r: rename";
     let command_guides_chunk = Paragraph::new(command_guides).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
 
     if app.mode == Mode::Filter {
-        f.render_widget(filter_chunk, chunks[0]);
+        let mut filter_area = chunks[0];
+        filter_area.height = 3;
+
+        chunks[1].y += filter_area.height;
+        chunks[1].height -= filter_area.height;
+
+        f.render_widget(filter_chunk, filter_area);
         f.set_cursor(
             // Put cursor past the end of the input text
-            chunks[0].x + filter_panel.content[0].width() as u16 + 1,
+            filter_area.x + filter_panel.content[0].width() as u16 + 1,
             // Move one line down, from the border to the input line
-            chunks[0].y + 1,
+            filter_area.y + 1,
         );
-    } else if app.mode == Mode::Rename {
+    }
+    f.render_widget(secrets_chunk, chunks[1]);
+    f.render_widget(command_guides_chunk, chunks[2]);
+
+    if app.mode == Mode::Rename {
         let (current_secret, _) = app.get_selected_secret();
         let rename_secret_chunk = Paragraph::new(app.panels.get(&PanelName::RenameSecret).unwrap().content[0].clone())
             .style(Style::default().fg(Color::Yellow))
@@ -63,7 +78,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let area = centered_rect(60, 7, size); // here dose size come from?
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(rename_secret_chunk, area);
-    } else if app.mode == Mode::Add {
+    }
+    if app.mode == Mode::Add {
         let name_area = centered_rect(30, 7, size);
         let mut value_area = centered_rect(30, 7, size);
         value_area.y += 2; // position below name area
@@ -113,9 +129,6 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             )
         }
     }
-    f.render_widget(secrets_chunk, chunks[1]);
-    f.render_widget(command_guides_chunk, chunks[2]);
-
     if app.mode == Mode::Delete {
         let (current_secret, _) = app.get_selected_secret();
         let confirm_area = centered_rect(30, 7, size);
