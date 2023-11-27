@@ -49,8 +49,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         .highlight_style(Style::default()
         .fg(Color::Yellow));
 
-    let command_guides = "shift + d: delete, shift + a: add secret, v: show content, enter: copy to clipboard, /: filter secrets, r: rename";
-    let command_guides_chunk = Paragraph::new(command_guides).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
+    let mut guides = "d: delete, a: add secret, g: generate a secret, enter: copy to clipboard, /: filter secrets, r: rename, q: quit";
 
     if app.mode == Mode::Filter {
         let mut filter_area = chunks[0];
@@ -66,9 +65,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             // Move one line down, from the border to the input line
             filter_area.y + 1,
         );
+
+        guides = "enter: copy to clipboard, esc: cancel"
     }
     f.render_widget(secrets_chunk, chunks[1]);
-    f.render_widget(command_guides_chunk, chunks[2]);
 
     if app.mode == Mode::Rename {
         let (current_secret, _) = app.get_selected_secret();
@@ -78,6 +78,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let area = centered_rect(60, 7, size); // here dose size come from?
         f.render_widget(Clear, area); //this clears out the background
         f.render_widget(rename_secret_chunk, area);
+
+        guides = "enter: rename secret, esc: cancel";
     }
     if app.mode == Mode::Add {
         let name_area = centered_rect(30, 7, size);
@@ -128,6 +130,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
                 value_layout[1].y
             )
         }
+
+        guides = "enter: confirm, esc: cancel";
     }
     if app.mode == Mode::Delete {
         let (current_secret, _) = app.get_selected_secret();
@@ -140,7 +144,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             .split(confirm_area);
 
         let confirm_label = Paragraph::new(confirm_text)
-            .style(Style::default().fg(Color::Yellow));
+            .style(Style::default()
+            .fg(Color::Yellow));
         let confirm_input = Paragraph::new(app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].clone())
             .style(Style::default()
             .fg(Color::Yellow))
@@ -151,8 +156,13 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         f.set_cursor(
             layout[1].x + app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].width() as u16,
             layout[1].y
-        )
+        );
+
+        guides = "enter: confirm, esc: cancel";
     }
+
+    let guides_chunk = Paragraph::new(guides).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
+    f.render_widget(guides_chunk, chunks[2]);
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`
