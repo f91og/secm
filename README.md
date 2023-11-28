@@ -1,21 +1,9 @@
 My secret management tool via cli
 ## Usage
 ```shell
-# make secret
-scem make secretName
-scem make secretName -l=20
-scem make secretName -l=20 -a
-
-# enter into interactive mode to select a secret
+# enter tui
 scem
-
-scem add secretName secretValue
 ```
-
-## Todo
-- scem rm secretName
-- add and make should overwrite same secret name after confirm from ui
-- remove add command, add secret can be support as a parameter in make command
 
 ## Memo
 **关于mod, use, crate, pub**
