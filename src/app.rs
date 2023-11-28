@@ -14,6 +14,12 @@ pub enum Mode {
     Delete,
 }
 
+pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, g: generate a secret, enter: copy to clipboard, /: filter secrets, r: rename, q: quit";
+pub const GUIDE_ADD: &str = "enter: confirm, tab: switch to next input, esc: cancel";
+pub const GUIDE_RENAME: &str = "enter: rename secret, esc: cancel";
+pub const GUIDE_DELETE: &str = "enter: confirm, esc: cancel";
+pub const GUIDE_MAKE: &str = "enter: make secret, esc: cancel";
+
 // 结构体必须掌握字段值所有权，因为结构体失效的时候会释放所有字段
 // 不意味着结构体中不定义引用型字段，这需要通过"生命周期"机制来实现
 // App负责管理状态数据，并提供方法来修改状态
@@ -23,6 +29,8 @@ pub struct App {
     pub cursor: u8,
     pub mode: Mode,
     pub show_popup: bool,
+    pub guide: String,
+    pub error: Option<String>,
 }
 
 // 为结构体添加方法
@@ -85,6 +93,8 @@ impl App {
             cursor: 0,
             mode: Mode::Normal,
             show_popup: false,
+            guide: GUIDE_NORMAL.to_string(),
+            error: None,
         }
     }
 
@@ -136,15 +146,6 @@ impl App {
         }
     }
 
-    pub fn back_to_normal_mode(&mut self) {
-        self.mode = Mode::Normal;
-        self.panels.get_mut(&PanelName::RenameSecret).unwrap().clear_content();
-        self.panels.get_mut(&PanelName::Filter).unwrap().clear_content();
-        self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
-        self.panels.get_mut(&PanelName::AddSecret).unwrap().clear_content();
-        self.panels.get_mut(&PanelName::DeleteSecret).unwrap().clear_content();
-    }
-
     pub fn add_secret (&mut self) {
         let add_secret_panel = self.panels.get_mut(&PanelName::AddSecret).unwrap();
         let new_secret_name = add_secret_panel.content[0].trim();
@@ -156,6 +157,29 @@ impl App {
         } else {
             self.secrets.insert(new_secret_name.to_string(), new_secret_value.to_string());
             utils::sync_secrets_to_file(&self.secrets);
+        }
+    }
+
+    pub fn switch_mode(&mut self, mode: Mode) {
+        self.mode = mode;
+        match self.mode {
+            Mode::Add => self.guide = GUIDE_ADD.to_string(),
+            Mode::Make => self.guide = GUIDE_MAKE.to_string(),
+            Mode::Delete => self.guide = GUIDE_DELETE.to_string(),
+            Mode::Rename => {
+                let (current_secret, _) = self.get_selected_secret();
+                self.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0] = current_secret;
+                self.guide = GUIDE_RENAME.to_string()
+            }
+            Mode::Normal => {
+                self.guide = GUIDE_NORMAL.to_string();
+                self.panels.get_mut(&PanelName::RenameSecret).unwrap().clear_content();
+                self.panels.get_mut(&PanelName::Filter).unwrap().clear_content();
+                self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
+                self.panels.get_mut(&PanelName::AddSecret).unwrap().clear_content();
+                self.panels.get_mut(&PanelName::DeleteSecret).unwrap().clear_content();
+            }
+            _ => {},
         }
     }
 }
