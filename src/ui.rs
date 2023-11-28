@@ -131,7 +131,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
             )
         }
 
-        guides = "enter: confirm, esc: cancel";
+        guides = "enter: confirm, tab: switch to next input, esc: cancel";
     }
     if app.mode == Mode::Delete {
         let (current_secret, _) = app.get_selected_secret();

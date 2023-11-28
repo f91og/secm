@@ -38,4 +38,10 @@ impl Panel {
         };
         format!("This is a help page for `{}` module!\n{}", name, page)
     }
+
+    pub fn clear_content(&mut self) {
+        for item in self.content.iter_mut() {
+            item.clear()
+        }
+    }
 }

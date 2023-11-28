@@ -51,7 +51,7 @@ impl App {
                 Panel {
                     index: 0,
                     panel_name: PanelName::RenameSecret,
-                    content: vec!["".to_string()],
+                    content: vec!["".to_string(), "".to_string()],
                 }
             ),
             (
@@ -67,7 +67,7 @@ impl App {
                 Panel {
                     index: 0,
                     panel_name: PanelName::AddSecret,
-                    content: vec!["".to_string(), "".to_string()],
+                    content: vec!["".to_string(), "".to_string(), "".to_string()],
                 }
             ),
             (
@@ -96,7 +96,6 @@ impl App {
                 .filter(|(key, _)| key.contains(_keyword))
                 .map(|(key, _)| key.clone())
                 .collect();
-
         } else {
             self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
         }
@@ -121,41 +120,42 @@ impl App {
         Ok(())
     }
 
-    pub fn rename_secret(&mut self) -> Result<(), String> {
+    pub fn rename_secret(&mut self) {
         let (current_secret, _)  = self.get_selected_secret();
-        let new_secret_name = &self.panels.get(&PanelName::RenameSecret).unwrap().content[0];
+        let rename_secret_panel = self.panels.get_mut(&PanelName::RenameSecret).unwrap();
+        let new_secret_name = rename_secret_panel.content[0].trim();
         let secret_value = self.secrets.get(&current_secret).unwrap();
         if self.secrets.contains_key(new_secret_name) {
-            return Err("Secret already exists".to_string());
+            rename_secret_panel.content[1] = "Secret already exists".to_string();
+        } else if new_secret_name.is_empty() {
+            rename_secret_panel.content[1] = "Name cannot be empty".to_string();
+        } else {
+            self.secrets.insert(new_secret_name.to_string(), secret_value.to_string());
+            self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
+            utils::sync_secrets_to_file(&self.secrets);
         }
-        self.secrets.insert(new_secret_name.clone(), secret_value.clone());
-        self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
-        self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
-        utils::sync_secrets_to_file(&self.secrets);
-        Ok(())
     }
 
     pub fn back_to_normal_mode(&mut self) {
         self.mode = Mode::Normal;
-        self.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].clear();
-        self.panels.get_mut(&PanelName::Filter).unwrap().content[0].clear();
+        self.panels.get_mut(&PanelName::RenameSecret).unwrap().clear_content();
+        self.panels.get_mut(&PanelName::Filter).unwrap().clear_content();
         self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
-        self.panels.get_mut(&PanelName::AddSecret).unwrap().content[0].clear();
-        self.panels.get_mut(&PanelName::AddSecret).unwrap().content[1].clear();
-        self.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].clear();
+        self.panels.get_mut(&PanelName::AddSecret).unwrap().clear_content();
+        self.panels.get_mut(&PanelName::DeleteSecret).unwrap().clear_content();
     }
 
-    pub fn add_secret (&mut self) -> Result<(), String> {
-        let new_secret_name = self.panels.get(&PanelName::AddSecret).unwrap().content[0].trim();
-        let new_secret_value = self.panels.get(&PanelName::AddSecret).unwrap().content[1].trim();
+    pub fn add_secret (&mut self) {
+        let add_secret_panel = self.panels.get_mut(&PanelName::AddSecret).unwrap();
+        let new_secret_name = add_secret_panel.content[0].trim();
+        let new_secret_value = add_secret_panel.content[1].trim();
         if new_secret_name.is_empty() || new_secret_value.is_empty() {
-            return Err("Secret name and value cannot be empty".to_string());
+            add_secret_panel.content[2] = "Name and value cannot be empty".to_string();
+        }else if self.secrets.contains_key(new_secret_name) {
+            add_secret_panel.content[2] = "Secret already exists".to_string();
+        } else {
+            self.secrets.insert(new_secret_name.to_string(), new_secret_value.to_string());
+            utils::sync_secrets_to_file(&self.secrets);
         }
-        if self.secrets.contains_key(new_secret_name) {
-            return Err("Secret already exists".to_string());
-        }
-        self.secrets.insert(new_secret_name.to_string(), new_secret_value.to_string());
-        utils::sync_secrets_to_file(&self.secrets);
-        Ok(())
     }
 }

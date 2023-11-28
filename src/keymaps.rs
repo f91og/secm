@@ -19,7 +19,7 @@ pub fn pressed_enter(app: &mut App) {
         }
         _ => {
             let (_, secret) = app.get_selected_secret();
-                // 复制到剪贴板
+            // 复制到剪贴板
             let mut clipboard = ClipboardContext::new().unwrap();
             clipboard.set_contents(secret).unwrap();
         }

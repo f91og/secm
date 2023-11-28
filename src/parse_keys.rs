@@ -50,8 +50,10 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                 }
                 KeyCode::Esc => app.back_to_normal_mode(),
                 KeyCode::Enter => {
-                    keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
-                    return Some(());
+                    if app.panels.get(&PanelName::Secrets).unwrap().content.len() > 0 {
+                        keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
+                        return Some(());
+                    }
                 }
                 KeyCode::Down => keymaps::move_cursor_vertical(app, 1),
                 KeyCode::Up => keymaps::move_cursor_vertical(app, -1),
@@ -96,13 +98,8 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                 }
                 KeyCode::Esc => app.back_to_normal_mode(),
                 KeyCode::Tab => {
-                    let current_content_index = app.panels.get(&PanelName::AddSecret).unwrap().index;
-                    // toggle between fields
-                    if current_content_index == 0 {
-                        app.panels.get_mut(&PanelName::AddSecret).unwrap().index = 1;
-                    } else {
-                        app.panels.get_mut(&PanelName::AddSecret).unwrap().index = 0;
-                    }
+                    let panel = app.panels.get_mut(&PanelName::AddSecret).unwrap();
+                    panel.index ^= 1;
                 }
                 _ => {}
             }
