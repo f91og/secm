@@ -2,7 +2,7 @@ My secret management tool via cli
 ## Usage
 ```shell
 # enter tui
-scem
+secm
 ```
 
 ## Memo
