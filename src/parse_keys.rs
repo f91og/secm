@@ -27,10 +27,7 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                 }
                 KeyCode::Down => keymaps::move_cursor_vertical(app, 1),
                 KeyCode::Up => keymaps::move_cursor_vertical(app, -1),
-                KeyCode::Enter => {
-                    keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
-                    return Some(());
-                }
+                KeyCode::Enter => {keymaps::pressed_enter(app); return Some(())},    // 复杂的处理放到keymaps里去
                 _ => {}
             }
         }
@@ -64,17 +61,10 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
         }
         Mode::Rename  => {
             match key.code {
-                KeyCode::Char(ch) => {
-                    app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].push(ch);
-                }
-                KeyCode::Backspace => {
-                    app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].pop();
-                }
+                KeyCode::Char(ch) => app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].push(ch),
+                KeyCode::Backspace => _ = app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].pop(),
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
-                KeyCode::Enter => {
-                    keymaps::pressed_enter(app);
-                    app.switch_mode(Mode::Normal);
-                }
+                KeyCode::Enter => keymaps::pressed_enter(app),
                 _ => {}
             }
         }
@@ -88,10 +78,7 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                     let current_content_index = app.panels.get(&PanelName::AddSecret).unwrap().index;
                     app.panels.get_mut(&PanelName::AddSecret).unwrap().content[current_content_index].pop();
                 }
-                KeyCode::Enter => {
-                    keymaps::pressed_enter(app);
-                    app.switch_mode(Mode::Normal);
-                }
+                KeyCode::Enter => keymaps::pressed_enter(app),
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
                 KeyCode::Tab => {
                     let panel = app.panels.get_mut(&PanelName::AddSecret).unwrap();
@@ -102,17 +89,10 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
         }
         Mode::Delete => {
             match key.code {
-                KeyCode::Char(ch) => {
-                    app.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].push(ch);
-                }
-                KeyCode::Backspace => {
-                    app.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].pop();
-                }
+                KeyCode::Char(ch) => app.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].push(ch),
+                KeyCode::Backspace => _ = app.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].pop(),
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
-                KeyCode::Enter => {
-                    keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
-                    app.switch_mode(Mode::Normal);
-                }
+                KeyCode::Enter => keymaps::pressed_enter(app),    // 复杂的处理放到keymaps里去
                 _ => {}
             }
         }

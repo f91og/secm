@@ -151,8 +151,13 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         );
     }
 
-    let guides_chunk = Paragraph::new(app.guide.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
-    f.render_widget(guides_chunk, chunks[2]);
+    let guide_chunk = Paragraph::new(app.guide.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
+    let error_chunk = Paragraph::new(app.error.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Red));
+    if app.error.is_empty() {
+        f.render_widget(guide_chunk, chunks[2]);
+    } else {
+        f.render_widget(error_chunk, chunks[2]);
+    }
 }
 
 /// helper function to create a centered rect using up certain percentage of the available rect `r`

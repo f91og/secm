@@ -7,14 +7,26 @@ use clipboard::{ClipboardContext, ClipboardProvider};
 pub fn pressed_enter(app: &mut App) {
     match app.mode {
         Mode::Rename => {
-            _ = app.rename_secret(); // todo: return operation result
+            if let Err(err) = app.rename_secret() {
+                app.set_error(&err);
+            } else {
+                app.mode = Mode::Normal;
+            }
         }
         Mode::Add => {
-            _ = app.add_secret();
+            if let Err(err) = app.add_secret() {
+                app.set_error(&err);
+            } else {
+                app.mode = Mode::Normal;
+            }
         }
         Mode::Delete => {
             if app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].trim() == "y" {
-                _ = app.delete_secret();
+                if let Err(err) = app.delete_secret() {
+                    app.set_error(&err);
+                } else {
+                    app.mode = Mode::Normal;
+                }
             }
         }
         _ => {

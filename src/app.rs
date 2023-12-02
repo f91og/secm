@@ -1,5 +1,6 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
+use std::time::{Duration, Instant};
 
 use crate::panel::{Panel, PanelName};
 use crate::utils;
@@ -30,7 +31,8 @@ pub struct App {
     pub mode: Mode,
     pub show_popup: bool,
     pub guide: String,
-    pub error: Option<String>,
+    pub error: String,
+    pub error_timer: Option<Instant>,
 }
 
 // 为结构体添加方法
@@ -59,7 +61,7 @@ impl App {
                 Panel {
                     index: 0,
                     panel_name: PanelName::RenameSecret,
-                    content: vec!["".to_string(), "".to_string()],
+                    content: vec!["".to_string()],
                 }
             ),
             (
@@ -75,7 +77,7 @@ impl App {
                 Panel {
                     index: 0,
                     panel_name: PanelName::AddSecret,
-                    content: vec!["".to_string(), "".to_string(), "".to_string()],
+                    content: vec!["".to_string(), "".to_string()],
                 }
             ),
             (
@@ -94,7 +96,8 @@ impl App {
             mode: Mode::Normal,
             show_popup: false,
             guide: GUIDE_NORMAL.to_string(),
-            error: None,
+            error: String::new(),
+            error_timer: None,
         }
     }
 
@@ -130,34 +133,35 @@ impl App {
         Ok(())
     }
 
-    pub fn rename_secret(&mut self) {
+    pub fn rename_secret(&mut self) -> Result<(), String> {
         let (current_secret, _)  = self.get_selected_secret();
         let rename_secret_panel = self.panels.get_mut(&PanelName::RenameSecret).unwrap();
         let new_secret_name = rename_secret_panel.content[0].trim();
         let secret_value = self.secrets.get(&current_secret).unwrap();
         if self.secrets.contains_key(new_secret_name) {
-            rename_secret_panel.content[1] = "Secret already exists".to_string();
+            return Err("Secret already exists".to_string());
         } else if new_secret_name.is_empty() {
-            rename_secret_panel.content[1] = "Name cannot be empty".to_string();
-        } else {
-            self.secrets.insert(new_secret_name.to_string(), secret_value.to_string());
-            self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
-            utils::sync_secrets_to_file(&self.secrets);
+            return Err("Name cannot be empty".to_string());
         }
+
+        self.secrets.insert(new_secret_name.to_string(), secret_value.to_string());
+        self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
+        utils::sync_secrets_to_file(&self.secrets);
+        Ok(())
     }
 
-    pub fn add_secret (&mut self) {
+    pub fn add_secret (&mut self) -> Result<(), String> {
         let add_secret_panel = self.panels.get_mut(&PanelName::AddSecret).unwrap();
         let new_secret_name = add_secret_panel.content[0].trim();
         let new_secret_value = add_secret_panel.content[1].trim();
         if new_secret_name.is_empty() || new_secret_value.is_empty() {
-            add_secret_panel.content[2] = "Name and value cannot be empty".to_string();
+            return Err("Name and value cannot be empty".to_string());
         }else if self.secrets.contains_key(new_secret_name) {
-            add_secret_panel.content[2] = "Secret already exists".to_string();
-        } else {
-            self.secrets.insert(new_secret_name.to_string(), new_secret_value.to_string());
-            utils::sync_secrets_to_file(&self.secrets);
+            return Err("Secret already exists".to_string());
         }
+        self.secrets.insert(new_secret_name.to_string(), new_secret_value.to_string());
+        utils::sync_secrets_to_file(&self.secrets);
+        Ok(())
     }
 
     pub fn switch_mode(&mut self, mode: Mode) {
@@ -173,6 +177,7 @@ impl App {
             }
             Mode::Normal => {
                 self.guide = GUIDE_NORMAL.to_string();
+                self.error = "".to_string();
                 self.panels.get_mut(&PanelName::RenameSecret).unwrap().clear_content();
                 self.panels.get_mut(&PanelName::Filter).unwrap().clear_content();
                 self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
@@ -180,6 +185,20 @@ impl App {
                 self.panels.get_mut(&PanelName::DeleteSecret).unwrap().clear_content();
             }
             _ => {},
+        }
+    }
+
+    pub fn set_error(&mut self, error: &str) {
+        self.error = error.to_string();
+        self.error_timer = Some(Instant::now());
+    }
+
+    pub fn clear_error_if_expired(&mut self) {
+        if let Some(timer) = self.error_timer {
+            if timer.elapsed() >= Duration::from_secs(3) {
+                self.error.clear();
+                self.error_timer = None;
+            }
         }
     }
 }
