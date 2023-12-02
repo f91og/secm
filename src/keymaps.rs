@@ -10,14 +10,14 @@ pub fn pressed_enter(app: &mut App) {
             if let Err(err) = app.rename_secret() {
                 app.set_error(&err);
             } else {
-                app.mode = Mode::Normal;
+                app.switch_mode(Mode::Normal)
             }
         }
         Mode::Add => {
             if let Err(err) = app.add_secret() {
                 app.set_error(&err);
             } else {
-                app.mode = Mode::Normal;
+                app.switch_mode(Mode::Normal)
             }
         }
         Mode::Delete => {
@@ -25,8 +25,15 @@ pub fn pressed_enter(app: &mut App) {
                 if let Err(err) = app.delete_secret() {
                     app.set_error(&err);
                 } else {
-                    app.mode = Mode::Normal;
+                    app.switch_mode(Mode::Normal)
                 }
+            }
+        }
+        Mode::Make => {
+            if let Err(err) = app.make_secret() {
+                app.set_error(&err);
+            } else {
+                app.switch_mode(Mode::Normal)
             }
         }
         _ => {

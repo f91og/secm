@@ -156,10 +156,36 @@ impl App {
         let new_secret_value = add_secret_panel.content[1].trim();
         if new_secret_name.is_empty() || new_secret_value.is_empty() {
             return Err("Name and value cannot be empty".to_string());
-        }else if self.secrets.contains_key(new_secret_name) {
+        }
+        if self.secrets.contains_key(new_secret_name) {
             return Err("Secret already exists".to_string());
         }
         self.secrets.insert(new_secret_name.to_string(), new_secret_value.to_string());
+        utils::sync_secrets_to_file(&self.secrets);
+        Ok(())
+    }
+
+    pub fn make_secret(&mut self) -> Result<(), String> {
+        let make_secret_panel = self.panels.get_mut(&PanelName::MakeSecret).unwrap();
+        let name = make_secret_panel.content[0].trim();
+        let length = make_secret_panel.content[1].trim();
+        let advance = make_secret_panel.content[2].trim();
+        if name.is_empty() || length.is_empty() || advance.is_empty() {
+            return Err("Name, length and advance cannot be empty".to_string());
+        }
+        if self.secrets.contains_key(name) {
+            return Err("Secret already exists".to_string());
+        }
+
+        let n = match length.parse::<usize>() {
+            Ok(num) => num,
+            Err(_) => {
+                return Err("Length must be number".to_string());
+            }
+        };
+
+        let new_secret_value = utils::generate_random_string(n, advance == "yes" || advance == "y");
+        self.secrets.insert(name.to_string(), new_secret_value);
         utils::sync_secrets_to_file(&self.secrets);
         Ok(())
     }

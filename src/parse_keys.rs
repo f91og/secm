@@ -32,18 +32,19 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
             }
         }
         Mode::Filter => {
+            let filter_panel = app.panels.get_mut(&PanelName::Filter).unwrap();
             match key.code {
                 KeyCode::Char(ch) => {
-                    app.panels.get_mut(&PanelName::Filter).unwrap().content[0].push(ch);
+                    filter_panel.content[0].push(ch);
                     app.filter_secrets_panel();
                 }
                 KeyCode::Backspace => {
-                    app.panels.get_mut(&PanelName::Filter).unwrap().content[0].pop();
+                    filter_panel.content[0].pop();
                     app.filter_secrets_panel();
                 }
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
                 KeyCode::Enter => {
-                    if app.panels.get(&PanelName::Secrets).unwrap().content.len() > 0 {
+                    if filter_panel.content.len() > 0 {
                         keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
                         return Some(());
                     }
@@ -54,43 +55,42 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
             }
         }
         Mode::Make  => {
+            let make_secret_panel = app.panels.get_mut(&PanelName::MakeSecret).unwrap();
             match key.code {
                 KeyCode::Esc => app.mode = Mode::Normal,
+                KeyCode::Char(ch) => make_secret_panel.content[make_secret_panel.index].push(ch),
+                KeyCode::Backspace => _ = make_secret_panel.content[make_secret_panel.index].pop(),
+                KeyCode::Tab => make_secret_panel.index = (make_secret_panel.index + 1) % 3,
+                KeyCode::Enter => keymaps::pressed_enter(app),
                 _ => {}
             }
         }
         Mode::Rename  => {
+            let rename_secret_panel = app.panels.get_mut(&PanelName::RenameSecret).unwrap();
             match key.code {
-                KeyCode::Char(ch) => app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].push(ch),
-                KeyCode::Backspace => _ = app.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0].pop(),
+                KeyCode::Char(ch) => rename_secret_panel.content[0].push(ch),
+                KeyCode::Backspace => _ = rename_secret_panel.content[0].pop(),
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
                 KeyCode::Enter => keymaps::pressed_enter(app),
                 _ => {}
             }
         }
         Mode::Add => {
+            let add_secret_panel = app.panels.get_mut(&PanelName::AddSecret).unwrap();
             match key.code {
-                KeyCode::Char(ch) => {
-                    let current_content_index = app.panels.get(&PanelName::AddSecret).unwrap().index;
-                    app.panels.get_mut(&PanelName::AddSecret).unwrap().content[current_content_index].push(ch);
-                }
-                KeyCode::Backspace => {
-                    let current_content_index = app.panels.get(&PanelName::AddSecret).unwrap().index;
-                    app.panels.get_mut(&PanelName::AddSecret).unwrap().content[current_content_index].pop();
-                }
+                KeyCode::Char(ch) => add_secret_panel.content[add_secret_panel.index].push(ch),
+                KeyCode::Backspace => _ = add_secret_panel.content[add_secret_panel.index].pop(),
                 KeyCode::Enter => keymaps::pressed_enter(app),
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
-                KeyCode::Tab => {
-                    let panel = app.panels.get_mut(&PanelName::AddSecret).unwrap();
-                    panel.index ^= 1;
-                }
+                KeyCode::Tab => add_secret_panel.index ^= 1,
                 _ => {}
             }
         }
         Mode::Delete => {
+            let delete_secret_panel = app.panels.get_mut(&PanelName::DeleteSecret).unwrap();
             match key.code {
-                KeyCode::Char(ch) => app.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].push(ch),
-                KeyCode::Backspace => _ = app.panels.get_mut(&PanelName::DeleteSecret).unwrap().content[0].pop(),
+                KeyCode::Char(ch) => delete_secret_panel.content[0].push(ch),
+                KeyCode::Backspace => _ = delete_secret_panel.content[0].pop(),
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
                 KeyCode::Enter => keymaps::pressed_enter(app),    // 复杂的处理放到keymaps里去
                 _ => {}
