@@ -80,77 +80,44 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let mut value_area = centered_rect(30, 7, size);
         value_area.y += 2; // position below name area
 
-        let name_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Length("name:".width() as u16 + 1), Constraint::Percentage(80)].as_ref())
-            .split(name_area);
+        let app_add_secret_panel = app.panels.get(&PanelName::AddSecret).unwrap();
 
-        let value_layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Length("value:".width() as u16 + 1), Constraint::Percentage(80)].as_ref())
-            .split(value_area);
-
-        let name_label = Paragraph::new("name: ")
-            .style(Style::default().fg(Color::Yellow));
-        let name_input = Paragraph::new(app.panels.get(&PanelName::AddSecret).unwrap().content[0].clone())
-            .style(Style::default()
-            .fg(Color::Yellow))
-            .block(Block::default());
-
-        f.render_widget(Clear, name_area);
-        f.render_widget(name_label, name_layout[0]);
-        f.render_widget(name_input, name_layout[1]);
-
-        let value_label = Paragraph::new("value: ")
-            .style(Style::default().fg(Color::Yellow)); 
-        let value_input = Paragraph::new(app.panels.get(&PanelName::AddSecret).unwrap().content[1].clone())
-            .style(Style::default()
-            .fg(Color::Yellow))
-            .block(Block::default());
-
-        f.render_widget(Clear, value_area);
-        f.render_widget(value_label, value_layout[0]);
-        f.render_widget(value_input, value_layout[1]);
-
-        if app.panels.get(&PanelName::AddSecret).unwrap().index == 0 {
-            f.set_cursor(
-                // Put cursor past the end of the input text
-                name_layout[1].x + app.panels.get(&PanelName::AddSecret).unwrap().content[0].width() as u16,
-                name_layout[1].y
-            )
+        if app_add_secret_panel.index == 0 {
+            render_label_input(f, name_area, "name: ".to_string(), app_add_secret_panel.content[0].clone(), true);
+            render_label_input(f, value_area, "value: ".to_string(), app_add_secret_panel.content[1].clone(), false);
         } else {
-            f.set_cursor(
-                value_layout[1].x + app.panels.get(&PanelName::AddSecret).unwrap().content[1].width() as u16,
-                value_layout[1].y
-            )
+            render_label_input(f, name_area, "name: ".to_string(), app_add_secret_panel.content[0].clone(), false);
+            render_label_input(f, value_area, "value: ".to_string(), app_add_secret_panel.content[1].clone(), true);
         }
     }
     if app.mode == Mode::Delete {
         let (current_secret, _) = app.get_selected_secret();
         let confirm_area = centered_rect(30, 7, size);
 
-        let confirm_text = format!("delete {}? y/n:", current_secret);
-        let layout = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Length(confirm_text.width() as u16 + 1), Constraint::Percentage(80)].as_ref())
-            .split(confirm_area);
-
-        let confirm_label = Paragraph::new(confirm_text)
-            .style(Style::default()
-            .fg(Color::Yellow));
-        let confirm_input = Paragraph::new(app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].clone())
-            .style(Style::default()
-            .fg(Color::Yellow))
-            .block(Block::default());
-
-        f.render_widget(confirm_label, layout[0]);
-        f.render_widget(confirm_input, layout[1]);
-        f.set_cursor(
-            layout[1].x + app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].width() as u16,
-            layout[1].y
-        );
+        let app_delete_secret_panel = app.panels.get(&PanelName::DeleteSecret).unwrap();
+        let confirm = format!("delete {}? y/n:", current_secret);
+        render_label_input(f, confirm_area, confirm, app_delete_secret_panel.content[0].clone(), true);
     }
+    if app.mode == Mode::Make {
+        let name_area = centered_rect(30, 7, size);
+        let mut length_area = centered_rect(30, 7, size);
+        let mut advance_area = centered_rect(30, 7, size);
+        length_area.y += 2; 
+        advance_area.y += 4; 
 
+        let app_make_secret_panel = app.panels.get(&PanelName::MakeSecret).unwrap();
+        let (mut name_set_cursor, mut length_set_cursor, mut advance_set_cursor) = (false, false, false);
+        if app_make_secret_panel.index == 0 {
+            name_set_cursor = true;
+        } else if app_make_secret_panel.index == 1 {
+            length_set_cursor = true;
+        } else {
+            advance_set_cursor = true;
+        }
+        render_label_input(f, name_area, "name: ".to_string(), app_make_secret_panel.content[0].clone(), name_set_cursor);
+        render_label_input(f, length_area, "length: ".to_string(), app_make_secret_panel.content[1].clone(), length_set_cursor);
+        render_label_input(f, advance_area, "advance: ".to_string(), app_make_secret_panel.content[2].clone(), advance_set_cursor);
+    }
     let guide_chunk = Paragraph::new(app.guide.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
     let error_chunk = Paragraph::new(app.error.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Red));
     if app.error.is_empty() {
@@ -185,4 +152,26 @@ fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
             .as_ref(),
         )
         .split(popup_layout[1])[1]
+}
+
+fn render_label_input<B: Backend>(f: &mut Frame<B>, area: Rect, label: String, input_content: String, set_cursor: bool) {
+    let layout = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(label.width() as u16 + 1), Constraint::Percentage(80)].as_ref())
+        .split(area);
+    let label_paragraph = Paragraph::new(label)
+        .style(Style::default().fg(Color::Yellow));
+    let input_paragraph= Paragraph::new(input_content.clone())
+        .style(Style::default()
+        .fg(Color::Yellow))
+        .block(Block::default());
+    f.render_widget(Clear, area);
+    f.render_widget(label_paragraph, layout[0]);
+    f.render_widget(input_paragraph, layout[1]);
+    if set_cursor {
+        f.set_cursor(
+            layout[1].x + input_content.width() as u16,
+            layout[1].y
+        )
+    }
 }

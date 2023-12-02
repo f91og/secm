@@ -69,7 +69,7 @@ impl App {
                 Panel {
                     index: 0,
                     panel_name: PanelName::MakeSecret,
-                    content: vec!["".to_string()],
+                    content: vec!["".to_string(), "10".to_string(), "n".to_string()],
                 }
             ),
             (
@@ -85,7 +85,7 @@ impl App {
                 Panel {
                     index: 0,
                     panel_name: PanelName::DeleteSecret,
-                    content: vec!["".to_string()],
+                    content: vec!["n".to_string()],
                 }
             )
         ]);
