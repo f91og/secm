@@ -16,9 +16,7 @@ use secm::cmds;
 
 const ERROR_MSG: &str = r#"
 "Usage:
- - secm # tui for manage secret
- - secm make secretName [-l=10 -a=true]/use [secretName])" # make a secret
- - secm make secretName -v=secretStr # add a secret from a string
+ - secm # enter secret management ui
 "#;
 
 fn main() {

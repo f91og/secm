@@ -16,10 +16,10 @@ pub enum Mode {
 }
 
 pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, g: generate a secret, enter: copy to clipboard, /: filter secrets, r: rename, q: quit";
-pub const GUIDE_ADD: &str = "enter: confirm, tab: switch to next input, esc: cancel";
+pub const GUIDE_ADD: &str = "enter: confirm, tab: switch input, esc: cancel";
 pub const GUIDE_RENAME: &str = "enter: rename secret, esc: cancel";
 pub const GUIDE_DELETE: &str = "enter: confirm, esc: cancel";
-pub const GUIDE_MAKE: &str = "enter: make secret, esc: cancel";
+pub const GUIDE_MAKE: &str = "enter: make secret, esc: cancel, tab: switch input";
 
 // 结构体必须掌握字段值所有权，因为结构体失效的时候会释放所有字段
 // 不意味着结构体中不定义引用型字段，这需要通过"生命周期"机制来实现
