@@ -82,13 +82,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
 
         let app_add_secret_panel = app.panels.get(&PanelName::AddSecret).unwrap();
 
-        if app_add_secret_panel.index == 0 {
-            render_label_input(f, name_area, "name: ".to_string(), app_add_secret_panel.content[0].clone(), true);
-            render_label_input(f, value_area, "value: ".to_string(), app_add_secret_panel.content[1].clone(), false);
-        } else {
-            render_label_input(f, name_area, "name: ".to_string(), app_add_secret_panel.content[0].clone(), false);
-            render_label_input(f, value_area, "value: ".to_string(), app_add_secret_panel.content[1].clone(), true);
-        }
+        render_label_input(f, name_area, "name: ".to_string(), app_add_secret_panel.content[0].clone(), app_add_secret_panel.index == 0);
+        render_label_input(f, value_area, "value: ".to_string(), app_add_secret_panel.content[1].clone(), app_add_secret_panel.index == 1);
     }
     if app.mode == Mode::Delete {
         let (current_secret, _) = app.get_selected_secret();
@@ -106,17 +101,10 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         advance_area.y += 4; 
 
         let app_make_secret_panel = app.panels.get(&PanelName::MakeSecret).unwrap();
-        let (mut name_set_cursor, mut length_set_cursor, mut advance_set_cursor) = (false, false, false);
-        if app_make_secret_panel.index == 0 {
-            name_set_cursor = true;
-        } else if app_make_secret_panel.index == 1 {
-            length_set_cursor = true;
-        } else {
-            advance_set_cursor = true;
-        }
-        render_label_input(f, name_area, "name: ".to_string(), app_make_secret_panel.content[0].clone(), name_set_cursor);
-        render_label_input(f, length_area, "length: ".to_string(), app_make_secret_panel.content[1].clone(), length_set_cursor);
-        render_label_input(f, advance_area, "advance: ".to_string(), app_make_secret_panel.content[2].clone(), advance_set_cursor);
+   
+        render_label_input(f, name_area, "name: ".to_string(), app_make_secret_panel.content[0].clone(), app_make_secret_panel.index == 0);
+        render_label_input(f, length_area, "length: ".to_string(), app_make_secret_panel.content[1].clone(), app_make_secret_panel.index == 1);
+        render_label_input(f, advance_area, "advance: ".to_string(), app_make_secret_panel.content[2].clone(), app_make_secret_panel.index == 2);
     }
     let guide_chunk = Paragraph::new(app.guide.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
     let error_chunk = Paragraph::new(app.error.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Red));
@@ -124,6 +112,7 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         f.render_widget(guide_chunk, chunks[2]);
     } else {
         f.render_widget(error_chunk, chunks[2]);
+        app.clear_error_if_expired();
     }
 }
 
