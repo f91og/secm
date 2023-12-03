@@ -57,7 +57,7 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
         Mode::Make  => {
             let make_secret_panel = app.panels.get_mut(&PanelName::MakeSecret).unwrap();
             match key.code {
-                KeyCode::Esc => app.mode = Mode::Normal,
+                KeyCode::Esc => app.switch_mode(Mode::Normal),
                 KeyCode::Char(ch) => make_secret_panel.content[make_secret_panel.index].push(ch),
                 KeyCode::Backspace => _ = make_secret_panel.content[make_secret_panel.index].pop(),
                 KeyCode::Tab => make_secret_panel.index = (make_secret_panel.index + 1) % 3,

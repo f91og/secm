@@ -15,7 +15,7 @@ pub enum Mode {
     Delete,
 }
 
-pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, g: generate a secret, enter: copy to clipboard, /: filter secrets, r: rename, q: quit";
+pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, m: make a secret, enter: copy to clipboard, /: filter secrets, r: rename, q: quit";
 pub const GUIDE_ADD: &str = "enter: confirm, tab: switch input, esc: cancel";
 pub const GUIDE_RENAME: &str = "enter: rename secret, esc: cancel";
 pub const GUIDE_DELETE: &str = "enter: confirm, esc: cancel";
