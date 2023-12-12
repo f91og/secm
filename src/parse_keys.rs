@@ -27,6 +27,7 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                 }
                 KeyCode::Down => keymaps::move_cursor_vertical(app, 1),
                 KeyCode::Up => keymaps::move_cursor_vertical(app, -1),
+                KeyCode::Esc => return Some(()),
                 KeyCode::Enter => {keymaps::pressed_enter(app); return Some(())},    // 复杂的处理放到keymaps里去
                 _ => {}
             }
@@ -44,10 +45,8 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                 }
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
                 KeyCode::Enter => {
-                    if filter_panel.content.len() > 0 {
-                        keymaps::pressed_enter(app);    // 复杂的处理放到keymaps里去
-                        return Some(());
-                    }
+                    keymaps::pressed_enter(app);
+                    return Some(());
                 }
                 KeyCode::Down => keymaps::move_cursor_vertical(app, 1),
                 KeyCode::Up => keymaps::move_cursor_vertical(app, -1),
