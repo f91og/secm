@@ -76,8 +76,8 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         f.render_widget(rename_secret_chunk, area);
     }
     if app.mode == Mode::Add {
-        let name_area = centered_rect(30, 7, size);
-        let mut value_area = centered_rect(30, 7, size);
+        let name_area = centered_rect(60, 7, size);
+        let mut value_area = centered_rect(60, 7, size);
         value_area.y += 2; // position below name area
 
         let app_add_secret_panel = app.panels.get(&PanelName::AddSecret).unwrap();
@@ -97,11 +97,11 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let name_area = centered_rect(30, 7, size);
         let mut length_area = centered_rect(30, 7, size);
         let mut advance_area = centered_rect(30, 7, size);
-        length_area.y += 2; 
-        advance_area.y += 4; 
+        length_area.y += 2;
+        advance_area.y += 4;
 
         let app_make_secret_panel = app.panels.get(&PanelName::MakeSecret).unwrap();
-   
+
         render_label_input(f, name_area, "name: ".to_string(), app_make_secret_panel.content[0].clone(), app_make_secret_panel.index == 0);
         render_label_input(f, length_area, "length: ".to_string(), app_make_secret_panel.content[1].clone(), app_make_secret_panel.index == 1);
         render_label_input(f, advance_area, "advance: ".to_string(), app_make_secret_panel.content[2].clone(), app_make_secret_panel.index == 2);
@@ -149,7 +149,8 @@ fn render_label_input<B: Backend>(f: &mut Frame<B>, area: Rect, label: String, i
         .constraints([Constraint::Length(label.width() as u16 + 1), Constraint::Percentage(80)].as_ref())
         .split(area);
     let label_paragraph = Paragraph::new(label)
-        .style(Style::default().fg(Color::Yellow));
+        .style(Style::default()
+        .fg(Color::Yellow));
     let input_paragraph= Paragraph::new(input_content.clone())
         .style(Style::default()
         .fg(Color::Yellow))

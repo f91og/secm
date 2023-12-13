@@ -27,6 +27,8 @@ pub fn pressed_enter(app: &mut App) {
                 } else {
                     app.switch_mode(Mode::Normal)
                 }
+            } else {
+                app.switch_mode(Mode::Normal)
             }
         }
         Mode::Make => {

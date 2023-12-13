@@ -44,10 +44,7 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                     app.filter_secrets_panel();
                 }
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
-                KeyCode::Enter => {
-                    keymaps::pressed_enter(app);
-                    return Some(());
-                }
+                KeyCode::Enter => app.mode = Mode::Normal,
                 KeyCode::Down => keymaps::move_cursor_vertical(app, 1),
                 KeyCode::Up => keymaps::move_cursor_vertical(app, -1),
                 _ => {}
