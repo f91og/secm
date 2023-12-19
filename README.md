@@ -61,6 +61,10 @@ cargo run
 
 # install current project to ~/.cargo/bin
 cargo install --path .
+cargo install --path . --offline
+
+cargo test
+cargo test test_aes256_cbc
 ```
 
 **关于数据类型**

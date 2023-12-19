@@ -1,6 +1,12 @@
+use crypto::{symmetriccipher::SymmetricCipherError, aes, buffer::{RefWriteBuffer, RefReadBuffer}};
+use crypto::aes::KeySize::KeySize256;
+use crypto::blockmodes::PkcsPadding;
+use crypto::buffer::{WriteBuffer, ReadBuffer};
 use rand::Rng;
 use rand::seq::SliceRandom;
+use std::str;
 use std::{fs::File, io::{Write, BufReader, BufRead, BufWriter}, collections::BTreeMap};
+use security_framework::os::macos::keychain::SecKeychain;
 
 pub fn generate_random_string(length: usize, advance: bool) -> String {
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -100,6 +106,99 @@ pub fn sync_secrets_to_file(secrets: &BTreeMap<String, String>) {
     // iterate through secrets map and write each to file
     for (name, value) in secrets.iter() {
         let secret = format!("{} {}\n", name, value);
+        let key = get_secm_key();
+        let encrypt_secret = aes256_cbc_encrypt(secret.as_bytes(), key.as_bytes(), &[0; 16]);
         writer.write_all(secret.as_bytes()).expect("Unable to write secret");
+    }
+}
+
+pub fn generate_secm_key() {
+    let password = generate_random_string(10, true);
+    let keychain = SecKeychain::default().expect("Unable to get default keychain");
+
+    keychain.set_generic_password("secm", "secm", password.as_bytes()).expect("Unable to set password");
+}
+
+pub fn get_secm_key() -> String {
+    let keychain = SecKeychain::default().expect("Unable to get default keychain");
+    let (password, _) = keychain.find_generic_password("secm", "secm").unwrap();
+    return String::from_utf8(password.as_ref().to_vec()).unwrap()
+}
+
+/// Encrypt a buffer with the given key and iv using AES256/CBC/Pkcs encryption.
+fn aes256_cbc_encrypt(data: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, SymmetricCipherError> {
+    let mut encryptor = aes::cbc_encryptor(KeySize256, key, iv, PkcsPadding);
+
+    let mut buffer = [0; 4096];
+    let mut write_buffer = RefWriteBuffer::new(&mut buffer);
+    let mut read_buffer = RefReadBuffer::new(data);
+    let mut final_result = Vec::new();
+
+    loop {
+        let result = encryptor.encrypt(&mut read_buffer, &mut write_buffer, true)?;
+        final_result.extend(write_buffer.take_read_buffer().take_remaining().iter().map(|&i| i));
+        match result {
+            BufferUnderflow => break,
+            _ => continue,
+        }
+    }
+
+    Ok(final_result)
+}
+
+/// Decrypt a buffer with the given key and iv using AES256/CBC/Pkcs encryption.
+fn aes256_cbc_decrypt(data: &[u8], key: &[u8], iv: &[u8]) -> Result<Vec<u8>, SymmetricCipherError> {
+    let mut decryptor = aes::cbc_decryptor(KeySize256, key, iv, PkcsPadding);
+
+    let mut buffer = [0; 4096];
+    let mut write_buffer = RefWriteBuffer::new(&mut buffer);
+    let mut read_buffer = RefReadBuffer::new(data);
+    let mut final_result = Vec::new();
+
+    loop {
+        let result = decryptor.decrypt(&mut read_buffer, &mut write_buffer, true)?;
+        final_result.extend(write_buffer.take_read_buffer().take_remaining().iter().map(|&i| i));
+        match result {
+            BufferUnderflow => break,
+            _ => continue,
+        }
+    }
+
+    Ok(final_result)
+}
+
+#[cfg(test)]
+mod tests {
+    // 注意这个惯用法：在 tests 模块中，从外部作用域导入所有名字。
+    use super::*;
+
+    #[test]
+    fn test_generate_and_get_secm_key() {
+        // Test generate_secm_key
+        generate_secm_key();
+
+        // Test get_secm_key
+        let key = get_secm_key();
+        assert!(!key.is_empty());  // Assuming the key should not be empty
+    }
+
+    #[test]
+    fn test_aes256_cbc() {
+        use rand::{RngCore, rngs::OsRng};
+        let mut rng = OsRng::default();
+
+        let mut key = [0; 32];
+        let mut iv = [0; 16];
+        rng.fill_bytes(&mut key);
+        rng.fill_bytes(&mut iv);
+
+        let data = "Hello, world!";
+        let encrypted_data = aes256_cbc_encrypt(data.as_bytes(), &key, &iv).unwrap();
+        let decrypted_data = aes256_cbc_decrypt(encrypted_data.as_slice(), &key, &iv).unwrap();
+
+        let result = String::from_utf8(decrypted_data).unwrap();
+
+        assert_eq!(data, result);
+        println!("{}", result);
     }
 }
