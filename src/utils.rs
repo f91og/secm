@@ -58,6 +58,10 @@ pub fn get_secrets(secret_file: &str) -> BTreeMap<String, String> {
         File::create(secret_file).expect("Unable to create file");
     }
     let mut file = File::open(secret_file).expect("Unable to open file");
+    // if file is empty, return empty map
+    if file.metadata().expect("Unable to get file metadata").len() == 0 {
+        return secrets;
+    }
     let mut buff = Vec::<u8>::new();
     file.read_to_end(&mut buff).expect("Unable to read data from file");
 
