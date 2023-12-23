@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 
 use crate::panel::{Panel, PanelName};
 use crate::utils;
+use crate::utils::get_secret_file_path;
 
 #[derive(PartialEq)]  // 这个宏自动生成 PartialEq 实现
 pub enum Mode {
@@ -15,7 +16,7 @@ pub enum Mode {
     Delete,
 }
 
-pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, m: make a secret, enter: copy to clipboard, /: filter secrets, r: rename, q: quit";
+pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, m: make secret, enter: copy to clipboard, /: filter secrets, r: rename, q: quit";
 pub const GUIDE_ADD: &str = "enter: confirm, tab: switch input, esc: cancel";
 pub const GUIDE_RENAME: &str = "enter: rename secret, esc: cancel";
 pub const GUIDE_DELETE: &str = "enter: confirm, esc: cancel";
@@ -129,7 +130,7 @@ impl App {
             return Err("Secret not found".to_string());
         }
         self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
-        utils::sync_secrets_to_file(&self.secrets);
+        utils::sync_secrets_to_file(&self.secrets, &get_secret_file_path());
         Ok(())
     }
 
@@ -146,7 +147,7 @@ impl App {
 
         self.secrets.insert(new_secret_name.to_string(), secret_value.to_string());
         self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
-        utils::sync_secrets_to_file(&self.secrets);
+        utils::sync_secrets_to_file(&self.secrets, &get_secret_file_path());
         Ok(())
     }
 
@@ -161,7 +162,7 @@ impl App {
             return Err("Secret already exists".to_string());
         }
         self.secrets.insert(new_secret_name.to_string(), new_secret_value.to_string());
-        utils::sync_secrets_to_file(&self.secrets);
+        utils::sync_secrets_to_file(&self.secrets, &get_secret_file_path());
         Ok(())
     }
 
@@ -186,7 +187,7 @@ impl App {
 
         let new_secret_value = utils::generate_random_string(n, advance == "yes" || advance == "y");
         self.secrets.insert(name.to_string(), new_secret_value);
-        utils::sync_secrets_to_file(&self.secrets);
+        utils::sync_secrets_to_file(&self.secrets, &get_secret_file_path());
         Ok(())
     }
 
