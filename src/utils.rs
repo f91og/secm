@@ -117,7 +117,7 @@ pub fn generate_secm_key() {
     let res = keychain.find_generic_password("secm", "secm");
     if res.is_err() {
         let key = generate_random_string(32, false);
-        keychain.add_generic_password("secm", "secm", key.as_bytes()).expect("Unable to set password");
+        keychain.add_generic_password("secm", "secm", key.as_bytes()).expect("Unable to set secm key");
     }
 }
 
@@ -181,8 +181,7 @@ mod tests {
         generate_secm_key();
 
         let key = get_secm_key();
-        assert!(!key.is_empty()); 
-        println!("key: {}", key);
+        assert!(!key.is_empty());
     }
 
     #[test]
@@ -215,7 +214,7 @@ mod tests {
     }
 
     #[test]
-    fn test_test_wr_u8() {
+    fn test_wr_u8() {
         let mut file = File::create("test").expect("Unable to open file");
         // Write a slice of bytes to the file
         file.write_all(&[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]).expect("Unable to write secret");
@@ -228,6 +227,8 @@ mod tests {
 
     #[test]
     fn test_decrypt_encrypt_with_file() {
+        generate_secm_key();
+        
         let mut secrets = BTreeMap::new();
         secrets.insert("key1".to_string(), "value1".to_string());
         secrets.insert("key2".to_string(), "value2".to_string());
