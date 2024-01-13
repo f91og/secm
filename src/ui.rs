@@ -83,7 +83,11 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
         let app_add_secret_panel = app.panels.get(&PanelName::AddSecret).unwrap();
 
         render_label_input(f, name_area, "name: ".to_string(), app_add_secret_panel.content[0].clone(), app_add_secret_panel.index == 0);
-        render_label_input(f, value_area, "value: ".to_string(), app_add_secret_panel.content[1].clone(), app_add_secret_panel.index == 1);
+
+        let secret_len = app_add_secret_panel.content[1].width();
+        // create a string using '*'s to represent the secret
+        let secret_string = (0..secret_len).map(|_| "*").collect::<String>();
+        render_label_input(f, value_area, "secret: ".to_string(), secret_string, app_add_secret_panel.index == 1);
     }
     if app.mode == Mode::Delete {
         let (current_secret, _) = app.get_selected_secret();
