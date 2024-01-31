@@ -6,8 +6,8 @@ use clipboard::{ClipboardContext, ClipboardProvider};
 // 键盘按键对应的处理函数，比如回车键后复制内容到剪贴板
 pub fn pressed_enter(app: &mut App) {
     match app.mode {
-        Mode::Rename => {
-            if let Err(err) = app.rename_secret() {
+        Mode::Update => {
+            if let Err(err) = app.update_secret() {
                 app.set_error(&err);
             } else {
                 app.switch_mode(Mode::Normal)

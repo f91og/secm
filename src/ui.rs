@@ -6,7 +6,7 @@ use tui::{
     Frame,
 };
 use unicode_width::UnicodeWidthStr;
-use crate::app::App;
+use crate::{app::App, panel::Panel};
 use crate::app::Mode;
 use crate::panel::PanelName;
 
@@ -66,28 +66,24 @@ pub fn ui<B: Backend>(f: &mut Frame<B>, app: &mut App) {
     }
     f.render_widget(secrets_chunk, chunks[1]);
 
-    if app.mode == Mode::Rename {
-        let (current_secret, _) = app.get_selected_secret();
-        let rename_secret_chunk = Paragraph::new(app.panels.get(&PanelName::RenameSecret).unwrap().content[0].clone())
-            .style(Style::default().fg(Color::Yellow))
-            .block(Block::default().borders(Borders::ALL).title(format!("rename {}", current_secret)));
-        let area = centered_rect(60, 7, size); // here dose size come from?
-        f.render_widget(Clear, area); //this clears out the background
-        f.render_widget(rename_secret_chunk, area);
-    }
-    if app.mode == Mode::Add {
+    if app.mode == Mode::Add || app.mode == Mode::Update{
         let name_area = centered_rect(60, 7, size);
         let mut value_area = centered_rect(60, 7, size);
         value_area.y += 2; // position below name area
 
-        let app_add_secret_panel = app.panels.get(&PanelName::AddSecret).unwrap();
+        let panels: &Panel;
+        if app.mode == Mode::Add {
+            panels = app.panels.get(&PanelName::AddSecret).unwrap();
+        } else {
+            panels = app.panels.get(&PanelName::UpdateSecret).unwrap();
+        }
 
-        render_label_input(f, name_area, "name: ".to_string(), app_add_secret_panel.content[0].clone(), app_add_secret_panel.index == 0);
+        render_label_input(f, name_area, "name: ".to_string(), panels.content[0].clone(), panels.index == 0);
 
-        let secret_len = app_add_secret_panel.content[1].width();
+        let secret_len = panels.content[1].width();
         // create a string using '*'s to represent the secret
         let secret_string = (0..secret_len).map(|_| "*").collect::<String>();
-        render_label_input(f, value_area, "secret: ".to_string(), secret_string, app_add_secret_panel.index == 1);
+        render_label_input(f, value_area, "secret: ".to_string(), secret_string, panels.index == 1);
     }
     if app.mode == Mode::Delete {
         let (current_secret, _) = app.get_selected_secret();

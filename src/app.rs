@@ -12,7 +12,7 @@ pub enum Mode {
     Filter,
     Make,
     Add,
-    Rename,
+    Update,
     Delete,
 }
 
@@ -58,11 +58,11 @@ impl App {
                 }
             ),
             (
-                PanelName::RenameSecret,
+                PanelName::UpdateSecret,
                 Panel {
                     index: 0,
-                    panel_name: PanelName::RenameSecret,
-                    content: vec!["".to_string()],
+                    panel_name: PanelName::UpdateSecret,
+                    content: vec!["".to_string(), "".to_string()],
                 }
             ),
             (
@@ -134,18 +134,19 @@ impl App {
         Ok(())
     }
 
-    pub fn rename_secret(&mut self) -> Result<(), String> {
+    pub fn update_secret(&mut self) -> Result<(), String> {
         let (current_secret, _)  = self.get_selected_secret();
-        let rename_secret_panel = self.panels.get_mut(&PanelName::RenameSecret).unwrap();
-        let new_secret_name = rename_secret_panel.content[0].trim();
-        let secret_value = self.secrets.get(&current_secret).unwrap();
-        if self.secrets.contains_key(new_secret_name) {
+        let update_secret_panel = self.panels.get_mut(&PanelName::UpdateSecret).unwrap();
+        let secret_name = update_secret_panel.content[0].trim();
+        let secret_value = update_secret_panel.content[1].trim();
+        // let secret_value = self.secrets.get(&current_secret).unwrap();
+        if self.secrets.contains_key(secret_name) {
             return Err("Secret already exists".to_string());
-        } else if new_secret_name.is_empty() {
+        } else if secret_name.is_empty() {
             return Err("Name cannot be empty".to_string());
         }
 
-        self.secrets.insert(new_secret_name.to_string(), secret_value.to_string());
+        self.secrets.insert(secret_name.to_string(), secret_value.to_string());
         self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
         utils::sync_secrets_to_file(&self.secrets, &get_secret_file_path());
         Ok(())
@@ -197,15 +198,16 @@ impl App {
             Mode::Add => self.guide = GUIDE_ADD.to_string(),
             Mode::Make => self.guide = GUIDE_MAKE.to_string(),
             Mode::Delete => self.guide = GUIDE_DELETE.to_string(),
-            Mode::Rename => {
-                let (current_secret, _) = self.get_selected_secret();
-                self.panels.get_mut(&PanelName::RenameSecret).unwrap().content[0] = current_secret;
+            Mode::Update => {
+                let (name, value) = self.get_selected_secret();
+                self.panels.get_mut(&PanelName::UpdateSecret).unwrap().content[0] = name;
+                self.panels.get_mut(&PanelName::UpdateSecret).unwrap().content[1] = value;
                 self.guide = GUIDE_RENAME.to_string()
             }
             Mode::Normal => {
                 self.guide = GUIDE_NORMAL.to_string();
                 self.error = "".to_string();
-                self.panels.get_mut(&PanelName::RenameSecret).unwrap().clear_content();
+                self.panels.get_mut(&PanelName::UpdateSecret).unwrap().clear_content();
                 self.panels.get_mut(&PanelName::Filter).unwrap().clear_content();
                 self.panels.get_mut(&PanelName::Secrets).unwrap().content = self.secrets.keys().cloned().collect();
                 self.panels.get_mut(&PanelName::AddSecret).unwrap().clear_content();

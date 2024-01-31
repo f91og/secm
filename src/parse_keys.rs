@@ -17,7 +17,7 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                         'q' => return Some(()),
                         'j' => keymaps::move_cursor_vertical(app, 1),
                         'k' => keymaps::move_cursor_vertical(app, -1),
-                        'r' => app.switch_mode(Mode::Rename),
+                        'r' => app.switch_mode(Mode::Update),
                         'm' => app.switch_mode(Mode::Make),
                         'a' => app.switch_mode(Mode::Add),
                         '/' => app.switch_mode(Mode::Filter),
@@ -50,7 +50,7 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                 _ => {}
             }
         }
-        Mode::Make  => {
+        Mode::Make => {
             let make_secret_panel = app.panels.get_mut(&PanelName::MakeSecret).unwrap();
             match key.code {
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
@@ -61,24 +61,25 @@ pub fn parse_keys(app: &mut App, key: KeyEvent) -> Option<()> {
                 _ => {}
             }
         }
-        Mode::Rename  => {
-            let rename_secret_panel = app.panels.get_mut(&PanelName::RenameSecret).unwrap();
+        Mode::Update => {
+            let panel = app.panels.get_mut(&PanelName::UpdateSecret).unwrap();
             match key.code {
-                KeyCode::Char(ch) => rename_secret_panel.content[0].push(ch),
-                KeyCode::Backspace => _ = rename_secret_panel.content[0].pop(),
+                KeyCode::Char(ch) => panel.content[panel.index].push(ch),
+                KeyCode::Backspace => _ = panel.content[panel.index].pop(),
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
                 KeyCode::Enter => keymaps::pressed_enter(app),
+                KeyCode::Tab => panel.index ^= 1,
                 _ => {}
             }
         }
         Mode::Add => {
-            let add_secret_panel = app.panels.get_mut(&PanelName::AddSecret).unwrap();
+            let panel = app.panels.get_mut(&PanelName::AddSecret).unwrap();
             match key.code {
-                KeyCode::Char(ch) => add_secret_panel.content[add_secret_panel.index].push(ch),
-                KeyCode::Backspace => _ = add_secret_panel.content[add_secret_panel.index].pop(),
+                KeyCode::Char(ch) => panel.content[panel.index].push(ch),
+                KeyCode::Backspace => _ = panel.content[panel.index].pop(),
                 KeyCode::Enter => keymaps::pressed_enter(app),
                 KeyCode::Esc => app.switch_mode(Mode::Normal),
-                KeyCode::Tab => add_secret_panel.index ^= 1,
+                KeyCode::Tab => panel.index ^= 1,
                 _ => {}
             }
         }

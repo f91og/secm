@@ -13,7 +13,7 @@ pub enum PanelName {
     Filter,
     Secrets,
     MakeSecret,
-    RenameSecret,
+    UpdateSecret,
     AddSecret,
     DeleteSecret,
 }
@@ -33,7 +33,7 @@ impl Panel {
             PanelName::Secrets => ["secrets", CRATES_HELP],
             PanelName::MakeSecret => ["make secret", CRATES_HELP],
             PanelName::AddSecret => ["make secret", CRATES_HELP],
-            PanelName::RenameSecret => ["rename secret", CRATES_HELP],
+            PanelName::UpdateSecret => ["update secret", CRATES_HELP],
             PanelName::DeleteSecret => ["delete secret", CRATES_HELP],
         };
         format!("This is a help page for `{}` module!\n{}", name, page)
