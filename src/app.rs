@@ -16,7 +16,7 @@ pub enum Mode {
     Delete,
 }
 
-pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, m: make secret, enter: copy to clipboard, /: filter secrets, r: rename, q: quit";
+pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, m: make secret, enter: copy to clipboard, /: filter secrets, r: update, q: quit";
 pub const GUIDE_ADD: &str = "enter: confirm, tab: switch input, esc: cancel";
 pub const GUIDE_RENAME: &str = "enter: rename secret, esc: cancel";
 pub const GUIDE_DELETE: &str = "enter: confirm, esc: cancel";
@@ -140,14 +140,12 @@ impl App {
         let secret_name = update_secret_panel.content[0].trim();
         let secret_value = update_secret_panel.content[1].trim();
         // let secret_value = self.secrets.get(&current_secret).unwrap();
-        if self.secrets.contains_key(secret_name) {
-            return Err("Secret already exists".to_string());
-        } else if secret_name.is_empty() {
+        if secret_name.is_empty() {
             return Err("Name cannot be empty".to_string());
         }
 
-        self.secrets.insert(secret_name.to_string(), secret_value.to_string());
         self.secrets.remove(&current_secret); // this must after line 104, after immutable borrow by secret_value is dropped
+        self.secrets.insert(secret_name.to_string(), secret_value.to_string());
         utils::sync_secrets_to_file(&self.secrets, &get_secret_file_path());
         Ok(())
     }

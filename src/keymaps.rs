@@ -55,3 +55,15 @@ pub fn move_cursor_vertical(app: &mut App, step: i8) {
         secrets_panel.index -= 1;
     }
 }
+
+// pub fn mask_secrets(app: &mut App) {
+//     let (_, secret) = app.get_selected_secret();
+
+//     // Mask the secret by replacing each character with '*'
+//     let mut masked = String::with_capacity(secret.len());
+//     masked.push_str(&"*".repeat(secret.len()));
+
+//     // Update the secret panel with the masked secret
+//     let secrets_panel = app.panels.get_mut(&PanelName::Secrets).unwrap();
+//     secrets_panel.content[secrets_panel.index] = masked;
+// }
