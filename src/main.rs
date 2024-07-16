@@ -1,17 +1,17 @@
-use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event},
-    execute,
-    terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
-};
-use std::{io, time::Duration};
-use tui::{
+use std::{error::Error, io};
+
+use ratatui::{
     backend::{Backend, CrosstermBackend},
-    Terminal,
+    crossterm::{
+        event::{self, DisableMouseCapture, EnableMouseCapture, Event},
+        execute,
+        terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
+    },
+    terminal::Terminal,
 };
 
 use secm::app::App;
 use secm::ui;
-use secm::parse_keys;
 use secm::cmds;
 
 const ERROR_MSG: &str = r#"
@@ -44,7 +44,7 @@ fn main() {
     }
 }
 
-fn scem() -> Result<(), io::Error> {
+fn scem() -> Result<(), Box<dyn Error>> {
     // 1.初始化终端
     enable_raw_mode()?;
     let mut stdout = io::stdout();
@@ -52,10 +52,9 @@ fn scem() -> Result<(), io::Error> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let app = App::new();
+    let app = App::default();
 
     // 2.渲染界面
-    // let res = run_app(&mut terminal, app)?;
     let res = run_app(&mut terminal, app);
 
     // 3.恢复终端
@@ -80,16 +79,11 @@ fn scem() -> Result<(), io::Error> {
 // 这种用法使得错误处理更加方便和紧凑，避免了显式的 `match` 或 `if let` 语句来处理每个可能的错误情况。如果使用 `?` 运算符，你可以将错误传播到调用者，以便在更高层次上进行处理。
 // 在你的示例中，当 `crossterm::event::poll(Duration::from_secs(1))?` 或 `event::read()?` 出现错误时，程序将尽早返回错误，以确保错误得到适当的处理。
 fn run_app<B: Backend>(terminal: &mut Terminal<B>, mut app: App) -> io::Result<()> {
-    loop {
-        terminal.draw(|f| ui::ui(f, &mut app))?;    // 把绘制界面逻辑放到ui模块中
-        // 处理按键事件
-        if crossterm::event::poll(Duration::from_secs(1))? {
-            if let Event::Key(key) = event::read()? {
-                // 解析按键事件
-                if parse_keys::parse_keys(&mut app, key).is_some() { // is_some()判断是否有值，不为None
-                    return Ok(());
-                };
-            }
-        }
+    while !app.should_exit {
+        terminal.draw(|f| ui::ui(f, &mut app))?;
+        if let Event::Key(key) = event::read()? {
+            app.handle_key(key);
+        };
     }
+    Ok(())
 }
