@@ -28,7 +28,6 @@ pub fn handle_key_in_make_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Backspace => _ = panel.content[panel.index].pop(),
         KeyCode::Tab => panel.index = (panel.index + 1) % 3,
         KeyCode::Enter => {
-
             let length = panel.content[1].trim();
             let n = match length.parse::<usize>() {
                 Ok(num) => num,
@@ -129,7 +128,10 @@ pub fn handle_key_in_normal_mode(app: &mut App, key: KeyEvent) {
         KeyCode::Down => app.select_next(),
         KeyCode::Up => app.select_previous(),
         KeyCode::Esc => app.should_exit = true,
-        KeyCode::Enter => app.copy_selected_to_clipboard(),    // 复杂的处理放到keymaps里去
+        KeyCode::Enter => {
+            app.copy_selected_to_clipboard();
+            app.should_exit = true;
+        },
         _ => {}
     }
 }
