@@ -1,25 +1,24 @@
 use std::time::Duration;
 
 use clipboard::{ClipboardContext, ClipboardProvider};
-use crossterm::event::KeyEvent;
 use ratatui::{
-    crossterm::event::{KeyCode, KeyEventKind},
+    crossterm::event::{KeyEventKind, KeyEvent},
     widgets::{
         ListItem, ListState,
     },
 };
 
-
 use std::collections::HashMap;
 use std::time::Instant;
 
 use crate::panel::{Panel, PanelName};
+use crate::handle_keys::*;
 
 use crate::utils;
 
 pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, m: make secret, enter: copy to clipboard, /: filter secrets, r: update, q: quit";
 pub const GUIDE_ADD: &str = "enter: confirm, tab: switch input, esc: cancel";
-pub const GUIDE_RENAME: &str = "enter: rename secret, esc: cancel";
+pub const GUIDE_UPDATE: &str = "enter: update secret, esc: cancel";
 pub const GUIDE_DELETE: &str = "enter: confirm, esc: cancel";
 pub const GUIDE_MAKE: &str = "enter: make secret, esc: cancel, tab: switch input";
 
@@ -39,9 +38,13 @@ pub struct App<'a> {
     pub panels: HashMap<PanelName, Panel>,
     // pub cursor: u8,
     pub mode: Mode,
-    pub guide: &'a str,
-    pub error: &'a str,
-    error_timer: Option<Instant>,
+    pub guide: &'static str,
+    pub error: AppErr<'a>,
+}
+
+pub struct AppErr<'a> {
+    pub msg: &'a str,
+    pub error_timer: Option<Instant>,
 }
 
 pub struct SecretList {
@@ -49,7 +52,7 @@ pub struct SecretList {
     pub state: ListState,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct SecretItem {
     pub name: String,
     pub value: String,
@@ -106,8 +109,10 @@ impl<'a> Default for App<'a> {
             mode: Mode::Normal,
             panels,
             guide: GUIDE_NORMAL,
-            error: "",
-            error_timer: None,
+            error: AppErr {
+                msg: "",
+                error_timer: None,
+            }
         }
     }
 }
@@ -137,64 +142,59 @@ impl<'a> App<'a> {
         if key.kind != KeyEventKind::Press {
             return;
         }
-        match key.code {
-            KeyCode::Char('q') | KeyCode::Esc => self.should_exit = true,
-            KeyCode::Char('j') | KeyCode::Down => self.select_next(),
-            KeyCode::Char('k') | KeyCode::Up => self.select_previous(),
-            KeyCode::Char('g') | KeyCode::Home => self.select_first(),
-            KeyCode::Char('G') | KeyCode::End => self.select_last(),
-            KeyCode::Char('/') => self.switch_mode(Mode::Filter),
-            KeyCode::Char('r') => self.switch_mode(Mode::Update),
-            KeyCode::Char('m') => self.switch_mode(Mode::Make),
-            KeyCode::Char('a') => self.switch_mode(Mode::Add),
-            KeyCode::Char('d') => self.switch_mode(Mode::Delete),
-            KeyCode::Enter => {
-                self.handle_enter();
-            }
-            _ => {}
+        match self.mode {
+            Mode::Filter => handle_key_in_filter_mode(self, key),
+            Mode::Add => handle_key_in_add_mode(self, key),
+            Mode::Normal =>handle_key_in_normal_mode(self, key),
+            Mode::Make => handle_key_in_make_mode(self, key),
+            Mode::Update => handle_key_in_update_mode(self, key),
+            Mode::Delete => handle_key_in_delete_mode(self, key),
         }
     }
 
-    fn select_next(&mut self) {
+    pub fn get_panel(&mut self, panel_name: PanelName) -> &mut Panel {
+        self.panels.get_mut(&panel_name).unwrap()
+    }
+
+    pub fn select_next(&mut self) {
         self.secret_list.state.select_next();
     }
-    fn select_previous(&mut self) {
+
+    pub fn select_previous(&mut self) {
         self.secret_list.state.select_previous();
     }
 
-    fn select_first(&mut self) {
-        self.secret_list.state.select_first();
-    }
+    // fn select_first(&mut self) {
+    //     self.secret_list.state.select_first();
+    // }
 
-    fn select_last(&mut self) {
-        self.secret_list.state.select_last();
-    }
+    // fn select_last(&mut self) {
+    //     self.secret_list.state.select_last();
+    // }
 
-   pub fn get_filter_string(&mut self) -> String {
+    pub fn get_filter_string(&mut self) -> String {
         let panel = self.panels.get(&PanelName::Filter).unwrap();
         let filter = panel.content[0].clone();
         return filter;
     }
 
-    fn switch_mode(&mut self, mode: Mode) {
+    pub fn switch_mode(&mut self, mode: Mode) {
         self.mode = mode;
         match self.mode {
             Mode::Add => self.guide = GUIDE_ADD,
             Mode::Make => self.guide = GUIDE_MAKE,
             Mode::Delete => self.guide = GUIDE_DELETE,
-            Mode::Filter => {
-                if let Some(i) = self.secret_list.state.selected() {
-                    let item = &self.secret_list.secrets[i];
-                    let name = item.name.clone();
-                    let value = item.value.clone();
-                    self.panels.get_mut(&PanelName::UpdateSecret).unwrap().content[0] = name;
-                    self.panels.get_mut(&PanelName::UpdateSecret).unwrap().content[1] = value;
-                    self.guide = GUIDE_RENAME;
+            Mode::Update => {
+                if let Some(secret) = self.get_selected_item() {
+                    let update_secret_panel = self.get_panel(PanelName::UpdateSecret);
+                    update_secret_panel.content[0] = secret.name;
+                    update_secret_panel.content[1] = secret.value;
+                    self.guide = GUIDE_UPDATE;
                 }
             }
             Mode::Normal => {
                 self.guide = GUIDE_NORMAL;
-                self.error = "";
+                self.error.msg = "";
                 self.panels.get_mut(&PanelName::UpdateSecret).unwrap().clear_content();
                 self.panels.get_mut(&PanelName::Filter).unwrap().clear_content();
                 self.panels.get_mut(&PanelName::AddSecret).unwrap().clear_content();
@@ -204,43 +204,77 @@ impl<'a> App<'a> {
         }
     }
 
-    fn handle_enter(&mut self) {
-        match self.mode {
-            Mode::Normal => {
-                self.copy_selected_to_clipboard();
-                self.should_exit = true;
-            }
-            Mode::Filter => {}
-            Mode::Make => {}
-            Mode::Add => {}
-            Mode::Update => {}
-            Mode::Delete => {}
-        }
-    }
-
-    pub fn get_selected_secret(&mut self) -> &str {
+    pub fn get_selected_item(&mut self) ->  Option<SecretItem>  {
         if let Some(i) = self.secret_list.state.selected() {
-            let item = &self.secret_list.secrets[i];
-            return &item.value;
+            let item = self.secret_list.secrets[i].clone();
+            Some(item)
+        } else {
+            None
         }
-        ""
     }
 
-    fn copy_selected_to_clipboard(&mut self) {
-        let secret = self.get_selected_secret();
-        if secret != "" {
+    pub fn copy_selected_to_clipboard(&mut self) {
+        if let Some(secret) = self.get_selected_item() {
             let mut clipboard = ClipboardContext::new().unwrap();
-            clipboard.set_contents(secret.to_string()).unwrap();
+            clipboard.set_contents(secret.value).unwrap();
+        } else {
+            self.error = AppErr{msg: "No secret selected", error_timer: Some(Instant::now())};
         }
     }
 
     pub fn clear_error_if_expired(&mut self) {
-        if let Some(timer) = self.error_timer {
+        if let Some(timer) = self.error.error_timer {
             if timer.elapsed() >= Duration::from_secs(3) {
-                self.error = "";
-                self.error_timer = None;
+                self.error.msg = "";
+                self.error.error_timer = None;
             }
         }
+    }
+
+    pub fn add_secret(&mut self, name: String, value: String) -> Result<(), &'static str> {
+        if name.is_empty() || value.is_empty() {
+            return Err("Name, value and cannot be empty");
+        }
+        let mut secrets = self.secret_list.secrets.clone();
+        if secrets.iter().any(|s| s.name == name) {
+            return Err("Secret already exists");
+        }
+
+        secrets.push(SecretItem::new(name, value));
+        utils::sync_secrets_to_file(secret_items_to_strings(&secrets), &utils::get_secret_file_path());
+        self.secret_list.secrets = secrets;
+        Ok(())
+    }
+
+    pub fn update_selected_secret(&mut self) -> Result<(), &'static str> {
+        if let Some(i)  = self.secret_list.state.selected() {
+            let update_secret_panel = self.panels.get_mut(&PanelName::UpdateSecret).unwrap();
+            let name = update_secret_panel.content[0].trim();
+            let value = update_secret_panel.content[1].trim();
+
+            if name.is_empty() || value.is_empty() {
+                return Err("Name and value cannot be empty");
+            }
+
+            let mut secrets = self.secret_list.secrets.clone();
+            secrets.remove(i);
+            secrets.push(SecretItem::new(name.to_string(), value.to_string()));
+
+            utils::sync_secrets_to_file(secret_items_to_strings(&secrets), &utils::get_secret_file_path());
+            self.secret_list.secrets = secrets;
+            return Ok(())
+        }
+        Err("No secret selected")
+    }
+
+    pub fn delete_selected_secret(&mut self) -> Result<(), &'static str> {
+        if let Some(i) = self.secret_list.state.selected() {
+            let mut secrets = self.secret_list.secrets.clone();
+            secrets.remove(i);
+            utils::sync_secrets_to_file(secret_items_to_strings(&secrets), &utils::get_secret_file_path());
+            return Ok(())
+        }
+        Err("No secret selected")
     }
 }
 
@@ -249,4 +283,12 @@ impl From<&SecretItem> for ListItem<'_> {
         let line = secret.name.clone();
         ListItem::new(line)
     }
+}
+
+fn secret_items_to_strings(secrets: &Vec<SecretItem>) -> Vec<String> {
+    let mut result = Vec::new();
+    for secret in secrets {
+        result.push(format!("{}: {}", secret.name, secret.value));
+    }
+    result
 }

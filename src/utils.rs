@@ -4,8 +4,8 @@ use crypto::blockmodes::PkcsPadding;
 use crypto::buffer::{WriteBuffer, ReadBuffer, BufferResult};
 use rand::Rng;
 use rand::seq::SliceRandom;
-use std::{path::Path, str, vec};
-use std::{fs::File, io::Write, collections::BTreeMap};
+use std::path::Path;
+use std::{fs::File, io::Write};
 use std::io::Read;
 use security_framework::os::macos::keychain::SecKeychain;
 
@@ -40,10 +40,10 @@ pub fn generate_random_string(length: usize, advance: bool) -> String {
     }
 }
 
-fn get_secret_file_path() -> String {
+pub fn get_secret_file_path() -> String {
     if let Some(home_dir) = dirs::home_dir() {
-        let home_path = home_dir.to_str().expect("Invalid home directory").to_string();
-        format!("{}/.secrets", home_path)
+        let home_path = home_dir.to_str().expect("Invalid home directory");
+        return format!("{}/.secrets", home_path);
     } else {
         panic!("Unable to determine home directory");
     }
@@ -52,14 +52,13 @@ fn get_secret_file_path() -> String {
 pub fn get_secrets() -> Vec<(String, String)> {
     let secret_file = get_secret_file_path();
     if !Path::new(&secret_file).exists() {
-        // File::create(secret_file).expect("Unable to create file");
-        File::create(&secret_file).expect("Unable to create file");
+        File::create(&secret_file).expect("Unable to create secret file");
     }
     // 如果上面是 File::create(&secret_file) 中不是引用而直接是secret_file，下面这行就会报错，因为 secret_file 用完后被丢弃了
-    let mut file = File::open(secret_file).expect("Unable to open file");
+    let mut file = File::open(secret_file).expect("Unable to open secret file");
 
     let mut buff = Vec::<u8>::new();
-    file.read_to_end(&mut buff).expect("Unable to read data from file");
+    file.read_to_end(&mut buff).expect("Unable to read data from secret file");
 
     let key = get_secm_key();
     let key_bytes = key.as_bytes();
@@ -86,15 +85,8 @@ pub fn get_secrets() -> Vec<(String, String)> {
 }
 
 // a method that sync a Vec<string> to secret file
-pub fn sync_secrets_to_file(secrets: &BTreeMap<String, String>, file_path: &str) {
+pub fn sync_secrets_to_file(secrets: Vec<String>, file_path: &str) {
     let mut file = File::create(file_path).expect("Unable to open file");
-
-    // iterate through secrets map and write each to file
-    let mut contents: Vec<String> = vec![];
-    for (name, value) in secrets.iter() {
-        let secret = format!("{} {}", name, value);
-        contents.push(secret);
-    }
 
     let key = get_secm_key();
     let key_bytes = key.as_bytes();
@@ -104,7 +96,7 @@ pub fn sync_secrets_to_file(secrets: &BTreeMap<String, String>, file_path: &str)
     }
     let iv = [0; 16];
 
-    let encrypted = aes256_cbc_encrypt(contents.join("\n").as_bytes(), &key_32, &iv).unwrap();
+    let encrypted = aes256_cbc_encrypt(secrets.join("\n").as_bytes(), &key_32, &iv).unwrap();
     file.write_all(&encrypted).expect("Unable to write secret");
 }
 

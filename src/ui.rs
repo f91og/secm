@@ -97,9 +97,10 @@ pub fn ui(f: &mut Frame, app: &mut App) {
     }
     if app.mode == Mode::Delete {
         let confirm_area = centered_rect(30, 7, size);
-        let selected_secret = app.get_selected_secret();
-        let confirm = format!("delete {}? y/n:", selected_secret);
-        render_label_input(f, confirm_area, confirm, app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].clone(), true);
+        if let Some(selected_secret) = app.get_selected_item() {
+            let confirm = format!("delete {}? y/n:", selected_secret.name);
+            render_label_input(f, confirm_area, confirm, app.panels.get(&PanelName::DeleteSecret).unwrap().content[0].clone(), true);
+        }
     }
     if app.mode == Mode::Make {
         let name_area = centered_rect(30, 7, size);
@@ -115,8 +116,8 @@ pub fn ui(f: &mut Frame, app: &mut App) {
         render_label_input(f, advance_area, "advance: ".to_string(), make_panel.content[2].clone(), make_panel.index == 2);
     }
     let guide_chunk = Paragraph::new(app.guide.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Blue));
-    let error_chunk = Paragraph::new(app.error.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Red));
-    if app.error.is_empty() {
+    let error_chunk = Paragraph::new(app.error.msg.to_string()).alignment(Alignment::Center).style(Style::default().fg(Color::Red));
+    if app.error.msg.is_empty() {
         f.render_widget(guide_chunk, guide_area);
     } else {
         f.render_widget(error_chunk, guide_area);
