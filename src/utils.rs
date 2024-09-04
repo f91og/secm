@@ -72,11 +72,10 @@ pub fn get_secrets() -> Vec<(String, String)> {
 
     let result = String::from_utf8(decrypted_data).unwrap();
 
-    // split result baccess_control_allow_originy \n
+    // every secret is separated by a newline
     let secrets: Vec<(String, String)> = result.split("\n").map(|line| {
         let mut parts = line.split(" ");
-        // _ = parts.next().expect("Unable to get secret"); // todo: make secret possible to be empty
-        let name = parts.next().expect("Unable to get secret name").to_string();
+        let name = parts.next().expect("Unable to get secret name").to_string().replace(":", "");
         let value = parts.next().expect("Unable to get secret value").to_string();
         (name, value)
     }).collect();

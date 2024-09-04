@@ -269,9 +269,8 @@ impl<'a> App<'a> {
 
     pub fn delete_selected_secret(&mut self) -> Result<(), &'static str> {
         if let Some(i) = self.secret_list.state.selected() {
-            let mut secrets = self.secret_list.secrets.clone();
-            secrets.remove(i);
-            utils::sync_secrets_to_file(secret_items_to_strings(&secrets), &utils::get_secret_file_path());
+            self.secret_list.secrets.remove(i);
+            utils::sync_secrets_to_file(secret_items_to_strings(&self.secret_list.secrets), &utils::get_secret_file_path());
             return Ok(())
         }
         Err("No secret selected")
