@@ -1,7 +1,6 @@
-pub mod cmds;
-pub mod utils;
 pub mod app;
-pub mod ui;
+pub mod utils;
 pub mod panel;
-pub mod keymaps;
-pub mod parse_keys;
+pub mod ui;
+pub mod cmds;
+pub mod handle_keys;
