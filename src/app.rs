@@ -34,6 +34,7 @@ pub enum Mode {
 
 pub struct App<'a> {
     pub should_exit: bool,
+    pub secrets:  Vec<(String, String)>,
     pub secret_list: SecretList,
     pub panels: HashMap<PanelName, Panel>,
     // pub cursor: u8,
@@ -103,9 +104,11 @@ impl<'a> Default for App<'a> {
                 }
             )
         ]);
+        let secrets = utils::get_secrets();
         Self {
             should_exit: false,
-            secret_list: SecretList::from_iter(utils::get_secrets()),
+            secrets: secrets.clone(),
+            secret_list: SecretList::from_iter(secrets),
             mode: Mode::Normal,
             panels,
             guide: GUIDE_NORMAL,
@@ -138,6 +141,15 @@ impl SecretItem {
 }
 
 impl<'a> App<'a> {
+    pub fn filter_secrets_list(&mut self, filter: &str) {
+        let filtered_secrets: Vec<(String, String)> = self.secrets.clone()
+            .into_iter()
+            .filter(|(name, _)| name.contains(filter))
+            .collect();
+
+        self.secret_list = SecretList::from_iter(filtered_secrets);
+    }
+
     pub fn handle_key(&mut self, key: KeyEvent) {
         if key.kind != KeyEventKind::Press {
             return;

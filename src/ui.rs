@@ -21,10 +21,10 @@ pub fn ui(f: &mut Frame, app: &mut App) {
     ]).margin(2);
     let [mut filter_area, mut secrets_area, guide_area] = vertical.areas(size);
 
-    let filter_word = app.get_filter_string();
-
     if app.mode == Mode::Filter {
-        let filter_chunk = Paragraph::new(filter_word.clone())
+        let filter_string = app.get_filter_string();
+        app.filter_secrets_list(&filter_string);
+        let filter_chunk = Paragraph::new(filter_string.clone())
             .style(Style::default()
             .fg(Color::Yellow))
             .block(Block::default()
@@ -37,7 +37,7 @@ pub fn ui(f: &mut Frame, app: &mut App) {
         f.render_widget(filter_chunk, filter_area);
         f.set_cursor(
             // Put cursor past the end of the input text
-            filter_area.x + filter_word.width() as u16 + 1,
+            filter_area.x + filter_string.width() as u16 + 1,
             // Move one line down, from the border to the input line
             filter_area.y + 1,
         );
@@ -56,7 +56,6 @@ pub fn ui(f: &mut Frame, app: &mut App) {
         .secrets
         .iter()
         .enumerate()
-        .filter(|(_, secret_item)| secret_item.name.contains(&filter_word))
         .map(|(i, secret_item)| {
             let color = alternate_colors(i);
             ListItem::from(secret_item).bg(color)
