@@ -4,10 +4,10 @@ use crypto::blockmodes::PkcsPadding;
 use crypto::buffer::{WriteBuffer, ReadBuffer, BufferResult};
 use rand::Rng;
 use rand::seq::SliceRandom;
-use std::path::Path;
 use std::{fs::File, io::Write};
-use std::io::Read;
 use security_framework::os::macos::keychain::SecKeychain;
+use rusqlite::{Connection, Result};
+
 
 pub fn generate_random_string(length: usize, advance: bool) -> String {
     const CHARSET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -40,47 +40,26 @@ pub fn generate_random_string(length: usize, advance: bool) -> String {
     }
 }
 
-pub fn get_secret_file_path() -> String {
-    if let Some(home_dir) = dirs::home_dir() {
-        let home_path = home_dir.to_str().expect("Invalid home directory");
-        return format!("{}/.secrets", home_path);
-    } else {
-        panic!("Unable to determine home directory");
-    }
-}
+pub fn get_secrets(conn: &Connection) -> Result<Vec<(String, String)>> {
+    let mut stmt = conn.prepare("SELECT name, value FROM secrets")?;
+    let rows = stmt.query_map([], |row| {
+        let name: String = row.get(0)?;
+        let encrypted_value: Vec<u8> = row.get(1)?;
 
-pub fn get_secrets() -> Vec<(String, String)> {
-    let secret_file = get_secret_file_path();
-    if !Path::new(&secret_file).exists() {
-        File::create(&secret_file).expect("Unable to create secret file");
-    }
-    // 如果上面是 File::create(&secret_file) 中不是引用而直接是secret_file，下面这行就会报错，因为 secret_file 用完后被丢弃了
-    let mut file = File::open(secret_file).expect("Unable to open secret file");
+        let key = get_secm_key();
+        let key_bytes = key.as_bytes();
+        let mut key_32: [u8; 32] = [0; 32];
+        for (i, byte) in key_bytes.iter().enumerate() {
+            key_32[i] = *byte;
+        }
+        let iv = [0; 16];
+        let decrypted_value = aes256_cbc_decrypt(&encrypted_value, &key_32, &iv).unwrap();
+        let value = String::from_utf8(decrypted_value).unwrap();
 
-    let mut buff = Vec::<u8>::new();
-    file.read_to_end(&mut buff).expect("Unable to read data from secret file");
+        Ok((name, value))
+    })?;
 
-    let key = get_secm_key();
-    let key_bytes = key.as_bytes();
-    let mut key_32: [u8; 32] = [0; 32];
-    for (i, byte) in key_bytes.iter().enumerate() {
-        key_32[i] = *byte;
-    }
-
-    let iv = [0; 16];
-    let decrypted_data = aes256_cbc_decrypt(buff.as_slice(), &key_32, &iv).unwrap();
-
-    let result = String::from_utf8(decrypted_data).unwrap();
-
-    // every secret is separated by a newline
-    let secrets: Vec<(String, String)> = result.split("\n").map(|line| {
-        let mut parts = line.split(" ");
-        let name = parts.next().expect("Unable to get secret name").to_string().replace(":", "");
-        let value = parts.next().expect("Unable to get secret value").to_string();
-        (name, value)
-    }).collect();
-
-    secrets
+    rows.collect()
 }
 
 // a method that sync a Vec<string> to secret file

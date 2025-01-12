@@ -13,8 +13,7 @@ use std::time::Instant;
 
 use crate::panel::{Panel, PanelName};
 use crate::handle_keys::*;
-
-use crate::utils;
+use crate::Storage;
 
 pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, m: make secret, enter: copy to clipboard, /: filter secrets, r: update, q: quit";
 pub const GUIDE_ADD: &str = "enter: confirm, tab: switch input, esc: cancel";
@@ -32,7 +31,7 @@ pub enum Mode {
     Delete,
 }
 
-pub struct App<'a> {
+pub struct App<'a, S: Storage> {
     pub should_exit: bool,
     pub secrets:  Vec<(String, String)>,
     pub secret_list: SecretList,
@@ -41,6 +40,7 @@ pub struct App<'a> {
     pub mode: Mode,
     pub guide: &'static str,
     pub error: AppErr<'a>,
+    pub storage: S,
 }
 
 pub struct AppErr<'a> {
@@ -59,9 +59,28 @@ pub struct SecretItem {
     pub value: String,
 }
 
-//<'a> App<'a>
-impl<'a> Default for App<'a> {
-    fn default() -> Self { // Self是App的类型的别名
+impl FromIterator<(String, String)> for SecretList {
+    fn from_iter<I: IntoIterator<Item = (String, String)>>(iter: I) -> Self {
+        let secrets = iter
+            .into_iter()
+            .map(|(name, value)| SecretItem::new(name, value))
+            .collect();
+        let state = ListState::default();
+        Self { secrets, state } // 这里的secrets为什么要和结构体中的匿名字段名一致？
+    }
+}
+
+impl SecretItem {
+    fn new(name: String, value: String) -> Self {
+        Self {
+            name,
+            value,
+        }
+    }
+}
+
+impl<'a, S: Storage> App<'a, S> {
+    pub fn new(storage: S) -> Self { // Self是App的类型的别名
         let panels = HashMap::from([
             (
                 PanelName::Filter,
@@ -104,43 +123,29 @@ impl<'a> Default for App<'a> {
                 }
             )
         ]);
-        let secrets = utils::get_secrets();
+        let all_secrets = storage
+            .get_all()
+            .unwrap_or_else(|err| {
+                eprintln!("Failed to load secrets from storage: {}", err);
+                vec![]
+            });
+        let secret_list = SecretList::from_iter(all_secrets.clone());
+
         Self {
             should_exit: false,
-            secrets: secrets.clone(),
-            secret_list: SecretList::from_iter(secrets),
-            mode: Mode::Normal,
+            secrets: all_secrets,
+            secret_list,
             panels,
+            mode: Mode::Normal,
             guide: GUIDE_NORMAL,
             error: AppErr {
                 msg: "",
                 error_timer: None,
-            }
+            },
+            storage,
         }
     }
-}
 
-impl FromIterator<(String, String)> for SecretList {
-    fn from_iter<I: IntoIterator<Item = (String, String)>>(iter: I) -> Self {
-        let secrets = iter
-            .into_iter()
-            .map(|(name, value)| SecretItem::new(name, value))
-            .collect();
-        let state = ListState::default();
-        Self { secrets, state } // 这里的secrets为什么要和结构体中的匿名字段名一致？
-    }
-}
-
-impl SecretItem {
-    fn new(name: String, value: String) -> Self {
-        Self {
-            name,
-            value,
-        }
-    }
-}
-
-impl<'a> App<'a> {
     pub fn filter_secrets_list(&mut self, filter: &str) {
         let filtered_secrets: Vec<(String, String)> = self.secrets.clone()
             .into_iter()
@@ -247,14 +252,15 @@ impl<'a> App<'a> {
         if name.is_empty() || value.is_empty() {
             return Err("Name, value and cannot be empty");
         }
-        let mut secrets = self.secret_list.secrets.clone();
-        if secrets.iter().any(|s| s.name == name) {
+
+        if self.secrets.iter().any(|s| s.0 == name) {
             return Err("Secret already exists");
         }
+        self.storage.write(&name, &value).expect("Failed to write secret");
 
-        secrets.push(SecretItem::new(name, value));
-        utils::sync_secrets_to_file(secret_items_to_strings(&secrets), &utils::get_secret_file_path());
-        self.secret_list.secrets = secrets;
+        self.secrets.push((name, value));
+        self.secret_list= SecretList::from_iter(self.secrets.clone());
+
         Ok(())
     }
 
@@ -268,12 +274,10 @@ impl<'a> App<'a> {
                 return Err("Name and value cannot be empty");
             }
 
-            let mut secrets = self.secret_list.secrets.clone();
-            secrets.remove(i);
-            secrets.push(SecretItem::new(name.to_string(), value.to_string()));
+            self.storage.update(name, value).expect("Failed to update secret");
+            self.secrets[i] = (name.to_string(), value.to_string());
 
-            utils::sync_secrets_to_file(secret_items_to_strings(&secrets), &utils::get_secret_file_path());
-            self.secret_list.secrets = secrets;
+            self.secret_list = SecretList::from_iter(self.secrets.clone());
             return Ok(())
         }
         Err("No secret selected")
@@ -281,8 +285,9 @@ impl<'a> App<'a> {
 
     pub fn delete_selected_secret(&mut self) -> Result<(), &'static str> {
         if let Some(i) = self.secret_list.state.selected() {
+            self.secrets.remove(i);
             self.secret_list.secrets.remove(i);
-            utils::sync_secrets_to_file(secret_items_to_strings(&self.secret_list.secrets), &utils::get_secret_file_path());
+            self.storage.delete(&self.secret_list.secrets[i].name).expect("Delete failed");
             return Ok(())
         }
         Err("No secret selected")
@@ -296,10 +301,10 @@ impl From<&SecretItem> for ListItem<'_> {
     }
 }
 
-fn secret_items_to_strings(secrets: &Vec<SecretItem>) -> Vec<String> {
-    let mut result = Vec::new();
-    for secret in secrets {
-        result.push(format!("{}: {}", secret.name, secret.value));
-    }
-    result
-}
+// fn secret_items_to_strings(secrets: &Vec<SecretItem>) -> Vec<String> {
+//     let mut result = Vec::new();
+//     for secret in secrets {
+//         result.push(format!("{}: {}", secret.name, secret.value));
+//     }
+//     result
+// }

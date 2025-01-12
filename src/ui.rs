@@ -2,7 +2,7 @@ use ratatui::{
     layout::{Alignment, Constraint, Direction, Layout, Rect}, style::{palette::tailwind::{BLUE, SLATE}, Color, Modifier, Style, Stylize}, symbols, terminal::Frame, text::Line, widgets::{Block, Borders, Clear, HighlightSpacing, List, ListItem, Paragraph}
 };
 use unicode_width::UnicodeWidthStr;
-use crate::{app::App, panel::Panel};
+use crate::{app::App, panel::Panel, Storage};
 use crate::app::Mode;
 use crate::panel::PanelName;
 
@@ -11,7 +11,7 @@ const NORMAL_ROW_BG: Color = SLATE.c950;
 const ALT_ROW_BG_COLOR: Color = SLATE.c900;
 const SELECTED_STYLE: Style = Style::new().bg(SLATE.c800).add_modifier(Modifier::BOLD);
 
-pub fn ui(f: &mut Frame, app: &mut App) {
+pub fn ui<S: Storage>(f: &mut Frame, app: &mut App<S>) {
     let size = f.size();
 
     let vertical = Layout::vertical([

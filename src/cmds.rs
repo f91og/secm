@@ -1,6 +1,9 @@
 use crate::utils;
 use clipboard::ClipboardProvider;
 use clipboard::ClipboardContext;
+// use serde_json::json;
+// use std::fs::File;
+// use std::io::Write;
 
 pub fn cmd_make(args: &[String]) -> Result<(), String> {
     let mut length = 10;
@@ -61,9 +64,27 @@ pub fn cmd_make(args: &[String]) -> Result<(), String> {
     Ok(()) // 只有写在最后的且没加分号的才会被当成返回值
 }
 
-// pub fn cmd_use(name: &str, secret_file: &str) {
-//     let secret = utils::get_secret(name, secret_file).unwrap_or("Secret not found".to_string());
-//     let mut ctx: ClipboardContext = ClipboardProvider::new().unwrap();
-//     ctx.set_contents(secret.to_owned()).expect("Failed to set clipboard content");
-//     println!("Use secret {}: ********, copied to clipboard", name);
+// pub fn cmd_export() -> Result<(), String> {
+//     let secret_file = "secrets.json";
+//     let secrets = utils::get_secrets(); // secrets 是 Vec<(String, String)>
+    
+//     // 转换 secrets 为 JSON 格式
+//     let mut secrets_json = Vec::new();
+//     for (name, key) in secrets {
+//         secrets_json.push(json!({
+//             "name": name,
+//             "key": key,
+//         }));
+//     }
+    
+//     // 打开文件并写入 JSON 数据
+//     let mut file = File::create(secret_file).map_err(|e| format!("Unable to create secret file: {}", e))?;
+//     let json_string = serde_json::to_string_pretty(&secrets_json)
+//         .map_err(|e| format!("Failed to serialize secrets to JSON: {}", e))?;
+    
+//     file.write_all(json_string.as_bytes())
+//         .map_err(|e| format!("Failed to write to secret file: {}", e))?;
+
+//     println!("Exported all secrets to secrets.json");
+//     Ok(())
 // }

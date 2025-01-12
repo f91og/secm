@@ -4,9 +4,9 @@ use ratatui::crossterm::event::{KeyCode, KeyEvent};
 
 use crate::app::{App, AppErr, Mode};
 use crate::panel::PanelName;
-use crate::utils;
+use crate::{utils, Storage};
 
-pub fn handle_key_in_filter_mode(app: &mut App, key: KeyEvent) {
+pub fn handle_key_in_filter_mode<S: Storage>(app: &mut App<S>, key: KeyEvent) {
     let panel = app.get_panel(PanelName::Filter);
     match key.code {
         KeyCode::Char(ch) => panel.content[0].push(ch),
@@ -19,7 +19,7 @@ pub fn handle_key_in_filter_mode(app: &mut App, key: KeyEvent) {
     }
 }
 
-pub fn handle_key_in_make_mode(app: &mut App, key: KeyEvent) {
+pub fn handle_key_in_make_mode<S: Storage>(app: &mut App<S>, key: KeyEvent) {
     let panel = app.get_panel(PanelName::MakeSecret);
 
     match key.code {
@@ -51,7 +51,7 @@ pub fn handle_key_in_make_mode(app: &mut App, key: KeyEvent) {
     }
 }
 
-pub fn handle_key_in_update_mode(app: &mut App, key: KeyEvent) {
+pub fn handle_key_in_update_mode<S: Storage>(app: &mut App<S>, key: KeyEvent) {
     let panel = app.get_panel(PanelName::UpdateSecret);
     match key.code {
         KeyCode::Char(ch) => panel.content[panel.index].push(ch),
@@ -69,7 +69,7 @@ pub fn handle_key_in_update_mode(app: &mut App, key: KeyEvent) {
     }
 }
 
-pub fn handle_key_in_delete_mode(app: &mut App, key: KeyEvent) {
+pub fn handle_key_in_delete_mode<S: Storage>(app: &mut App<S>, key: KeyEvent){
     let panel = app.get_panel(PanelName::DeleteSecret);
     match key.code {
         KeyCode::Char(ch) => panel.content[0].push(ch),
@@ -90,7 +90,7 @@ pub fn handle_key_in_delete_mode(app: &mut App, key: KeyEvent) {
     }
 }
 
-pub fn handle_key_in_add_mode(app: &mut App, key: KeyEvent) {
+pub fn handle_key_in_add_mode<S: Storage>(app: &mut App<S>, key: KeyEvent) {
     let panel = app.get_panel(PanelName::AddSecret);
     match key.code {
         KeyCode::Char(ch) => panel.content[panel.index].push(ch),
@@ -110,7 +110,7 @@ pub fn handle_key_in_add_mode(app: &mut App, key: KeyEvent) {
     }
 }
 
-pub fn handle_key_in_normal_mode(app: &mut App, key: KeyEvent) {
+pub fn handle_key_in_normal_mode<S: Storage>(app: &mut App<S>, key: KeyEvent){
     match key.code {
         KeyCode::Char(ch) => {
             match ch {
