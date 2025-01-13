@@ -32,7 +32,7 @@ pub fn handle_key_in_make_mode<S: Storage>(app: &mut App<S>, key: KeyEvent) {
             let n = match length.parse::<usize>() {
                 Ok(num) => num,
                 Err(_) => {
-                    app.error = AppErr{msg: "Length must be number", error_timer: Some(Instant::now())};
+                    app.error = AppErr{msg: "Length must be number".to_string(), error_timer: Some(Instant::now())};
                     return;
                 }
             };
@@ -42,7 +42,7 @@ pub fn handle_key_in_make_mode<S: Storage>(app: &mut App<S>, key: KeyEvent) {
             let value = utils::generate_random_string(n, advance == "yes" || advance == "y");
 
             if let Err(err) = app.add_secret(name, value) {
-                app.error = AppErr{msg: &err, error_timer: Some(Instant::now())};
+                app.error = AppErr{msg: err, error_timer: Some(Instant::now())};
             } else {
                 app.switch_mode(Mode::Normal)
             }
@@ -59,7 +59,7 @@ pub fn handle_key_in_update_mode<S: Storage>(app: &mut App<S>, key: KeyEvent) {
         KeyCode::Esc => app.switch_mode(Mode::Normal),
         KeyCode::Enter => {
             if let Err(err) = app.update_selected_secret() {
-                app.error = AppErr{msg: &err, error_timer: Some(Instant::now())};
+                app.error = AppErr{msg: err, error_timer: Some(Instant::now())};
             } else {
                 app.switch_mode(Mode::Normal)
             }
@@ -78,7 +78,7 @@ pub fn handle_key_in_delete_mode<S: Storage>(app: &mut App<S>, key: KeyEvent){
         KeyCode::Enter => {
             if panel.content[0].trim() == "y" {
                 if let Err(err) = app.delete_selected_secret() {
-                    app.error = AppErr{msg: &err, error_timer: Some(Instant::now())};
+                    app.error = AppErr{msg: err, error_timer: Some(Instant::now())};
                 } else {
                     app.switch_mode(Mode::Normal)
                 }
@@ -99,7 +99,7 @@ pub fn handle_key_in_add_mode<S: Storage>(app: &mut App<S>, key: KeyEvent) {
             let name = panel.content[0].trim().to_string();
             let value = panel.content[1].trim().to_string();
             if let Err(err) = app.add_secret(name, value) {
-                app.error = AppErr{msg: &err, error_timer: Some(Instant::now())};
+                app.error = AppErr{msg: err, error_timer: Some(Instant::now())};
             } else {
                 app.switch_mode(Mode::Normal)
             }

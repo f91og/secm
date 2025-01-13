@@ -31,7 +31,7 @@ pub enum Mode {
     Delete,
 }
 
-pub struct App<'a, S: Storage> {
+pub struct App<S: Storage> {
     pub should_exit: bool,
     pub secrets:  Vec<(String, String)>,
     pub secret_list: SecretList,
@@ -39,12 +39,12 @@ pub struct App<'a, S: Storage> {
     // pub cursor: u8,
     pub mode: Mode,
     pub guide: &'static str,
-    pub error: AppErr<'a>,
+    pub error: AppErr,
     pub storage: S,
 }
 
-pub struct AppErr<'a> {
-    pub msg: &'a str,
+pub struct AppErr {
+    pub msg: String,
     pub error_timer: Option<Instant>,
 }
 
@@ -79,7 +79,7 @@ impl SecretItem {
     }
 }
 
-impl<'a, S: Storage> App<'a, S> {
+impl<S: Storage> App<S> {
     pub fn new(storage: S) -> Self { // Self是App的类型的别名
         let panels = HashMap::from([
             (
@@ -139,7 +139,7 @@ impl<'a, S: Storage> App<'a, S> {
             mode: Mode::Normal,
             guide: GUIDE_NORMAL,
             error: AppErr {
-                msg: "",
+                msg: "".to_string(),
                 error_timer: None,
             },
             storage,
@@ -211,7 +211,7 @@ impl<'a, S: Storage> App<'a, S> {
             }
             Mode::Normal => {
                 self.guide = GUIDE_NORMAL;
-                self.error.msg = "";
+                self.error.msg.clear();
                 self.panels.get_mut(&PanelName::UpdateSecret).unwrap().clear_content();
                 self.panels.get_mut(&PanelName::Filter).unwrap().clear_content();
                 self.panels.get_mut(&PanelName::AddSecret).unwrap().clear_content();
@@ -235,28 +235,28 @@ impl<'a, S: Storage> App<'a, S> {
             let mut clipboard = ClipboardContext::new().unwrap();
             clipboard.set_contents(secret.value).unwrap();
         } else {
-            self.error = AppErr{msg: "No secret selected", error_timer: Some(Instant::now())};
+            self.error = AppErr{msg: "No secret selected".to_string(), error_timer: Some(Instant::now())};
         }
     }
 
     pub fn clear_error_if_expired(&mut self) {
         if let Some(timer) = self.error.error_timer {
             if timer.elapsed() >= Duration::from_secs(3) {
-                self.error.msg = "";
+                self.error.msg.clear();
                 self.error.error_timer = None;
             }
         }
     }
 
-    pub fn add_secret(&mut self, name: String, value: String) -> Result<(), &'static str> {
+    pub fn add_secret(&mut self, name: String, value: String) -> Result<(), String> {
         if name.is_empty() || value.is_empty() {
-            return Err("Name, value and cannot be empty");
+            return Err("Name, value and cannot be empty".to_string());
         }
 
         if self.secrets.iter().any(|s| s.0 == name) {
-            return Err("Secret already exists");
+            return Err("Secret already exists".to_string());
         }
-        self.storage.write(&name, &value).expect("Failed to write secret");
+        self.storage.write(&name, &value)?;
 
         self.secrets.push((name, value));
         self.secret_list= SecretList::from_iter(self.secrets.clone());
@@ -264,33 +264,36 @@ impl<'a, S: Storage> App<'a, S> {
         Ok(())
     }
 
-    pub fn update_selected_secret(&mut self) -> Result<(), &'static str> {
+    pub fn update_selected_secret(&mut self) -> Result<(), String> {
         if let Some(i)  = self.secret_list.state.selected() {
             let update_secret_panel = self.panels.get_mut(&PanelName::UpdateSecret).unwrap();
             let name = update_secret_panel.content[0].trim();
             let value = update_secret_panel.content[1].trim();
 
             if name.is_empty() || value.is_empty() {
-                return Err("Name and value cannot be empty");
+                return Err("Name and value cannot be empty".to_string());
             }
 
-            self.storage.update(name, value).expect("Failed to update secret");
+            // 在 Rust 中，.expect("Failed to update secret") 是一种用于处理 Result 或 Option 类型的方式。它会检查 Result 是否是 Ok 或 Some，如果是，它会继续执行；如果不是（即为 Err 或 None），则会终止程序，并打印给定的错误消息（例如 "Failed to update secret"），然后 panic（引发恐慌）。
+            //所以，.expect() 不会将错误信息传递到上层，它会使程序在遇到错误时崩溃。如果你希望错误信息能够传递到上层，而不是让程序崩溃，你可以使用 ? 运算符来传播错误
+            //  self.storage.delete(name).expect("update failed")
+            self.storage.delete(name)?;
+            self.storage.write(name, value)?;
             self.secrets[i] = (name.to_string(), value.to_string());
-
             self.secret_list = SecretList::from_iter(self.secrets.clone());
             return Ok(())
         }
-        Err("No secret selected")
+        Err("No secret selected".to_string())
     }
 
-    pub fn delete_selected_secret(&mut self) -> Result<(), &'static str> {
+    pub fn delete_selected_secret(&mut self) -> Result<(), String> {
         if let Some(i) = self.secret_list.state.selected() {
+            self.storage.delete(&self.secrets[i].0)?;
             self.secrets.remove(i);
             self.secret_list.secrets.remove(i);
-            self.storage.delete(&self.secret_list.secrets[i].name).expect("Delete failed");
             return Ok(())
         }
-        Err("No secret selected")
+        Err("No secret selected".to_string())
     }
 }
 
