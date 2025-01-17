@@ -5,6 +5,7 @@ pub mod ui;
 pub mod cmds;
 pub mod handle_keys;
 pub mod storage;
+pub mod model;
 
 pub trait Storage {
     fn write(&self, key: &str, value: &str) -> Result<(), String>;

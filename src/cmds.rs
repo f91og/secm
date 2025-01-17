@@ -1,6 +1,15 @@
+use std::fs::File;
+use std::io::Read;
+use std::io::Write;
+use std::path::Path;
+
+use crate::model::Secret;
+use crate::storage::SqliteStorage;
 use crate::utils;
+use crate::Storage;
 use clipboard::ClipboardProvider;
 use clipboard::ClipboardContext;
+use serde_json::json;
 // use serde_json::json;
 // use std::fs::File;
 // use std::io::Write;
@@ -62,6 +71,68 @@ pub fn cmd_make(args: &[String]) -> Result<(), String> {
     // ------------------------------
 
     Ok(()) // 只有写在最后的且没加分号的才会被当成返回值
+}
+
+pub fn cmd_export() -> Result<(), String> {
+    let secret_file = "secrets.json";
+    // judge if the file exists
+    if Path::new(secret_file).exists() {
+        return Err(format!("{} already exists", secret_file));
+    }
+    
+    let home_dir = dirs::home_dir()
+    .ok_or("Unable to determine home directory")?;
+
+    let home_dir_str = home_dir
+        .to_str()
+        .ok_or("Home directory contains invalid UTF-8")?;
+
+    let storage = SqliteStorage::new(&format!("{}/.secrets.db", home_dir_str))?;
+    let secrets = storage.get_all()?;
+    // write all secrets to json file
+    let mut secrets_json = Vec::new();
+    for (name, value) in secrets {
+        secrets_json.push(json!({
+            "name": name,
+            "value:": value
+        }));
+    }
+    let mut file = File::create(secret_file).map_err(|e| format!("Unable to create secret file: {}", e))?;
+    let json_string = serde_json::to_string_pretty(&secrets_json)
+        .map_err(|e| format!("Failed to serialize secrets to JSON: {}", e))?;
+    
+    file.write_all(json_string.as_bytes())
+        .map_err(|e| format!("Failed to write to secret file: {}", e))?;
+
+    println!("Exported all secrets to secrets.json");
+    Ok(())
+}
+
+pub fn cmd_import() -> Result<(), String> {
+    let secret_file = "secrets.json";
+    // judge if the file exists
+    if !Path::new(secret_file).exists() {
+        return Err(format!("{} does not exist", secret_file));
+    }
+
+    // read (name, value) from json file
+    let mut file = File::open(secret_file).map_err(|e| format!("Unable to open secret file: {}", e))?;
+    let mut json_string = String::new();
+    file.read_to_string(&mut json_string).map_err(|e| format!("Failed to read secret file: {}", e))?;
+    let secrets: Vec<Secret> = serde_json::from_str(&json_string)
+        .map_err(|e| format!("Failed to deserialize secrets from JSON: {}", e))?;
+
+    // write all secrets to db
+    let home_dir = dirs::home_dir().ok_or("Unable to determine home directory")?;
+    let home_dir_str = home_dir.to_str().ok_or("Home directory contains invalid UTF-8")?;
+    let storage = SqliteStorage::new(&format!("{}/.secrets.db", home_dir_str))?;
+    for secret in secrets {
+        storage.write(&secret.name, &secret.value).map_err(|e| format!("Failed to store secret: {}", e))?;
+        println!("Stored secret: {}", &secret.name);
+    }
+
+    println!("imported all secrets from secrets.json");
+    Ok(())
 }
 
 // pub fn cmd_export() -> Result<(), String> {

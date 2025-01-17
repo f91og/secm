@@ -25,14 +25,19 @@ fn main() {
         }
         return;
     }
-    if args.len() < 3  {
-        panic!("{}", ERROR_MSG)
-    }
+    // if args.len() < 3  {
+    //     panic!("{}", ERROR_MSG)
+    // }
 
     let verb = args[1].trim();
     match verb {
-        "make" => {
-            if let Err(err) = cmds::cmd_make(&args[2..]) {
+        "import" => {
+            if let Err(err) = cmds::cmd_import() {
+                println!("{}", err);
+            }
+        },
+        "export" => {
+            if let Err(err) = cmds::cmd_export() {
                 println!("{}", err);
             }
         },

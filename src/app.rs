@@ -14,6 +14,7 @@ use std::time::Instant;
 use crate::panel::{Panel, PanelName};
 use crate::handle_keys::*;
 use crate::Storage;
+use crate::model::Secret;
 
 pub const GUIDE_NORMAL: &str = "d: delete, a: add secret, m: make secret, enter: copy to clipboard, /: filter secrets, r: update, q: quit";
 pub const GUIDE_ADD: &str = "enter: confirm, tab: switch input, esc: cancel";
@@ -49,28 +50,22 @@ pub struct AppErr {
 }
 
 pub struct SecretList {
-    pub secrets: Vec<SecretItem>,
+    pub secrets: Vec<Secret>,
     pub state: ListState,
-}
-
-#[derive(Debug, Clone)]
-pub struct SecretItem {
-    pub name: String,
-    pub value: String,
 }
 
 impl FromIterator<(String, String)> for SecretList {
     fn from_iter<I: IntoIterator<Item = (String, String)>>(iter: I) -> Self {
         let secrets = iter
             .into_iter()
-            .map(|(name, value)| SecretItem::new(name, value))
+            .map(|(name, value)| Secret::new(name, value))
             .collect();
         let state = ListState::default();
         Self { secrets, state } // 这里的secrets为什么要和结构体中的匿名字段名一致？
     }
 }
 
-impl SecretItem {
+impl Secret {
     fn new(name: String, value: String) -> Self {
         Self {
             name,
@@ -221,7 +216,7 @@ impl<S: Storage> App<S> {
         }
     }
 
-    pub fn get_selected_item(&mut self) ->  Option<SecretItem>  {
+    pub fn get_selected_item(&mut self) ->  Option<Secret>  {
         if let Some(i) = self.secret_list.state.selected() {
             let item = self.secret_list.secrets[i].clone();
             Some(item)
@@ -297,8 +292,8 @@ impl<S: Storage> App<S> {
     }
 }
 
-impl From<&SecretItem> for ListItem<'_> {
-    fn from(secret: &SecretItem) -> Self {
+impl From<&Secret> for ListItem<'_> {
+    fn from(secret: &Secret) -> Self {
         let line = secret.name.clone();
         ListItem::new(line)
     }
