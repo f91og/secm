@@ -41,7 +41,11 @@ fn main() {
                 println!("{}", err);
             }
         },
-        _ => {print!("{} {}", ERROR_MSG, verb);},
+        _ => {
+            if let Err(err) = cmds::cmd_save(&args[1..]) {
+                println!("{}", err);
+            }
+        },
     }
 }
 

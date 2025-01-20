@@ -135,6 +135,27 @@ pub fn cmd_import() -> Result<(), String> {
     Ok(())
 }
 
+pub fn cmd_save(args: &[String]) -> Result<(), String> {
+    // Convert args to a single string
+    let combined: String = args.join(" ");
+
+    // Calculate the length of the first 30% of the string
+    let length = combined.len();
+    let name_length = (length as f32 * 0.5).ceil() as usize;
+
+    // Extract the first 30% as the name
+    let generated_name = combined.chars().take(name_length).collect::<String>();
+
+    // For demonstration, print the generated name (you can handle it as needed)
+    let home_dir = dirs::home_dir().ok_or("Unable to determine home directory")?;
+    let home_dir_str = home_dir.to_str().ok_or("Home directory contains invalid UTF-8")?;
+    let storage = SqliteStorage::new(&format!("{}/.secrets.db", home_dir_str))?;
+    storage.write(&generated_name, &combined).map_err(|e| format!("Failed to save: {}", e))?;
+
+    println!("saved secret string: {}", combined);
+    Ok(())
+}
+
 // pub fn cmd_export() -> Result<(), String> {
 //     let secret_file = "secrets.json";
 //     let secrets = utils::get_secrets(); // secrets 是 Vec<(String, String)>
