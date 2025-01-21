@@ -261,6 +261,7 @@ impl<S: Storage> App<S> {
 
     pub fn update_selected_secret(&mut self) -> Result<(), String> {
         if let Some(i)  = self.secret_list.state.selected() {
+            let original_name = &self.secrets[i].0;
             let update_secret_panel = self.panels.get_mut(&PanelName::UpdateSecret).unwrap();
             let name = update_secret_panel.content[0].trim();
             let value = update_secret_panel.content[1].trim();
@@ -272,7 +273,7 @@ impl<S: Storage> App<S> {
             // 在 Rust 中，.expect("Failed to update secret") 是一种用于处理 Result 或 Option 类型的方式。它会检查 Result 是否是 Ok 或 Some，如果是，它会继续执行；如果不是（即为 Err 或 None），则会终止程序，并打印给定的错误消息（例如 "Failed to update secret"），然后 panic（引发恐慌）。
             //所以，.expect() 不会将错误信息传递到上层，它会使程序在遇到错误时崩溃。如果你希望错误信息能够传递到上层，而不是让程序崩溃，你可以使用 ? 运算符来传播错误
             //  self.storage.delete(name).expect("update failed")
-            self.storage.delete(name)?;
+            self.storage.delete(original_name)?;
             self.storage.write(name, value)?;
             self.secrets[i] = (name.to_string(), value.to_string());
             self.secret_list = SecretList::from_iter(self.secrets.clone());
