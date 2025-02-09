@@ -34,8 +34,8 @@ pub enum Mode {
 
 pub struct App<S: Storage> {
     pub should_exit: bool,
-    pub secrets:  Vec<(String, String)>,
-    pub secret_list: SecretList,
+    pub secrets:  Vec<(String, String)>, // todo: change this to map
+    pub secret_list: SecretList,         // todo: consider merge 2 secrets 
     pub panels: HashMap<PanelName, Panel>,
     // pub cursor: u8,
     pub mode: Mode,
@@ -255,13 +255,14 @@ impl<S: Storage> App<S> {
 
         self.secrets.push((name, value));
         self.secret_list= SecretList::from_iter(self.secrets.clone());
+        self.secret_list.state.select_last();
 
         Ok(())
     }
 
     pub fn update_selected_secret(&mut self) -> Result<(), String> {
         if let Some(i)  = self.secret_list.state.selected() {
-            let original_name = &self.secrets[i].0;
+            let selected_key = &self.secret_list.secrets[i].name;
             let update_secret_panel = self.panels.get_mut(&PanelName::UpdateSecret).unwrap();
             let name = update_secret_panel.content[0].trim();
             let value = update_secret_panel.content[1].trim();
@@ -273,10 +274,20 @@ impl<S: Storage> App<S> {
             // 在 Rust 中，.expect("Failed to update secret") 是一种用于处理 Result 或 Option 类型的方式。它会检查 Result 是否是 Ok 或 Some，如果是，它会继续执行；如果不是（即为 Err 或 None），则会终止程序，并打印给定的错误消息（例如 "Failed to update secret"），然后 panic（引发恐慌）。
             //所以，.expect() 不会将错误信息传递到上层，它会使程序在遇到错误时崩溃。如果你希望错误信息能够传递到上层，而不是让程序崩溃，你可以使用 ? 运算符来传播错误
             //  self.storage.delete(name).expect("update failed")
-            self.storage.delete(original_name)?;
-            self.storage.write(name, value)?;
-            self.secrets[i] = (name.to_string(), value.to_string());
-            self.secret_list = SecretList::from_iter(self.secrets.clone());
+            // self.storage.delete(selected_key)?;
+            // self.storage.write(name, value)?;
+            // self.secrets[i] = (name.to_string(), value.to_string());
+            // self.secret_list = SecretList::from_iter(self.secrets.clone());
+            // return Ok(())
+            if let Some(original_index) = self.secrets.iter().position(|(key, _)| key == selected_key) {
+                // 从存储中删除
+                self.storage.delete(selected_key)?;
+                self.storage.write(name, value)?;
+                self.secrets[original_index] = (name.to_string(), value.to_string());
+                self.secret_list = SecretList::from_iter(self.secrets.clone());
+            }
+
+            // todo: set selected index to current index
             return Ok(())
         }
         Err("No secret selected".to_string())
@@ -284,10 +295,17 @@ impl<S: Storage> App<S> {
 
     pub fn delete_selected_secret(&mut self) -> Result<(), String> {
         if let Some(i) = self.secret_list.state.selected() {
-            self.storage.delete(&self.secrets[i].0)?;
-            self.secrets.remove(i);
+            let selected_key = &self.secret_list.secrets[i].name;
+            // 在 self.secrets 中找到对应的索引
+            if let Some(original_index) = self.secrets.iter().position(|(key, _)| key == selected_key) {
+                // 从存储中删除
+                self.storage.delete(selected_key)?;
+                // 从原始 secrets 列表中删除
+                self.secrets.remove(original_index);
+            }
             self.secret_list.secrets.remove(i);
-            return Ok(())
+
+            return Ok(());
         }
         Err("No secret selected".to_string())
     }
